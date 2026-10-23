@@ -57,3 +57,32 @@ def calculate_schedule(principal, annual_rate_percent, tenure_months):
         })
 
     return schedule
+
+def calculate_affordability(monthly_income, existing_emi, annual_rate_percent, tenure_months, max_emi_ratio=0.40):
+    # 1. Validate inputs
+    if monthly_income <= 0:
+        raise ValueError("Monthly income must be greater than 0")
+    if existing_emi < 0:
+        raise ValueError("Existing EMI cannot be negative")
+    if annual_rate_percent < 0:
+        raise ValueError("Interest rate cannot be negative")
+    if tenure_months <= 0:
+        raise ValueError("Tenure must be greater than 0")
+
+    # 2. How much EMI can we still afford?
+    max_emi = monthly_income * max_emi_ratio - existing_emi
+    if max_emi <= 0:
+        return {"max_emi": 0, "max_loan_amount": 0}
+
+    # 3. Convert that EMI into a loan amount
+    monthly_rate = annual_rate_percent / 12 / 100
+    if monthly_rate == 0:
+        max_loan = max_emi * tenure_months
+    else:
+        growth = (1 + monthly_rate) ** tenure_months
+        max_loan = max_emi * (growth - 1) / (monthly_rate * growth)
+
+    return {
+        "max_emi": round(max_emi, 2),
+        "max_loan_amount": round(max_loan, 2),
+    }

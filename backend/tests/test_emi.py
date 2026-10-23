@@ -1,5 +1,5 @@
 import pytest
-from app.services.finance import calculate_emi, calculate_schedule
+from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability
 
 
 def test_normal_loan():
@@ -46,3 +46,27 @@ def test_schedule_principal_adds_up():
     schedule = calculate_schedule(500000, 10, 60)
     total_principal = sum(row["principal_paid"] for row in schedule)
     assert round(total_principal, 2) == 500000
+
+
+def test_affordability_round_trip():
+    # Income 80000, existing EMI 10000 -> max EMI = 32000 - 10000 = 22000
+    result = calculate_affordability(80000, 10000, 10, 60)
+    assert result["max_emi"] == 22000
+    # Taking the max loan should give back about the same EMI
+    check = calculate_emi(result["max_loan_amount"], 10, 60)
+    assert abs(check["emi"] - 22000) < 1
+
+
+def test_affordability_no_room():
+    result = calculate_affordability(30000, 15000, 10, 60)
+    assert result["max_loan_amount"] == 0
+
+
+def test_affordability_zero_interest():
+    result = calculate_affordability(80000, 10000, 0, 60)
+    assert result["max_loan_amount"] == 22000 * 60
+
+
+def test_affordability_bad_income():
+    with pytest.raises(ValueError):
+        calculate_affordability(0, 0, 10, 60)
