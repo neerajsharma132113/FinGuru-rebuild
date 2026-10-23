@@ -1,8 +1,20 @@
+import datetime
+from typing import Literal
+
 from fastapi import FastAPI, Query
+from pydantic import BaseModel, Field
+
 from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability
-
+from app.database import init_db, add_transaction, list_transactions
 app = FastAPI(title="FinGuru")
+init_db()
 
+
+class NewTransaction(BaseModel):
+    date: datetime.date
+    category: str = Field(min_length=1, max_length=50)
+    kind: Literal["income", "expense"]
+    amount: float = Field(gt=0, le=100000000)
 
 @app.get("/health")
 def health():
@@ -33,3 +45,13 @@ def affordability(
     tenure_months: int = Query(gt=0, le=600),
 ):
     return calculate_affordability(monthly_income, existing_emi, annual_rate_percent, tenure_months)
+
+@app.post("/transactions", status_code=201)
+def create_transaction(transaction: NewTransaction):
+    add_transaction(str(transaction.date), transaction.category, transaction.kind, transaction.amount)
+    return {"message": "Transaction added"}
+
+
+@app.get("/transactions")
+def get_transactions():
+    return list_transactions()
