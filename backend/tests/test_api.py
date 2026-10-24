@@ -76,3 +76,16 @@ def test_negative_amount_rejected():
     body = {"date": "2026-10-01", "category": "salary", "kind": "income", "amount": -5}
     response = client.post("/transactions", json=body)
     assert response.status_code == 422
+
+
+def test_summary():
+    client.post("/transactions", json={"date": "2026-10-01", "category": "salary", "kind": "income", "amount": 80000})
+    client.post("/transactions", json={"date": "2026-10-03", "category": "rent", "kind": "expense", "amount": 20000})
+
+    response = client.get("/summary")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["month"] == "2026-10"
+    assert data[0]["savings"] == 60000
+    assert data[0]["savings_rate_percent"] == 75.0

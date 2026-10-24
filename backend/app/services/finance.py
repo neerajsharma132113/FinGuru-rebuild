@@ -86,3 +86,38 @@ def calculate_affordability(monthly_income, existing_emi, annual_rate_percent, t
         "max_emi": round(max_emi, 2),
         "max_loan_amount": round(max_loan, 2),
     }
+
+
+def summarize_by_month(transactions):
+    months = {}
+
+    for t in transactions:
+        month = t["date"][:7]
+        if month not in months:
+            months[month] = {"income": 0, "expenses": 0}
+
+        if t["kind"] == "income":
+            months[month]["income"] += t["amount"]
+        else:
+            months[month]["expenses"] += t["amount"]
+
+    result = []
+    for month in sorted(months):
+        income = round(months[month]["income"], 2)
+        expenses = round(months[month]["expenses"], 2)
+        savings = round(income - expenses, 2)
+
+        if income > 0:
+            savings_rate = round(savings / income * 100, 2)
+        else:
+            savings_rate = None  # cannot divide by zero income
+
+        result.append({
+            "month": month,
+            "income": income,
+            "expenses": expenses,
+            "savings": savings,
+            "savings_rate_percent": savings_rate,
+        })
+
+    return result

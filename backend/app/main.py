@@ -4,7 +4,7 @@ from typing import Literal
 from fastapi import FastAPI, Query
 from pydantic import BaseModel, Field
 
-from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability
+from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month
 from app.database import init_db, add_transaction, list_transactions
 app = FastAPI(title="FinGuru")
 init_db()
@@ -55,3 +55,7 @@ def create_transaction(transaction: NewTransaction):
 @app.get("/transactions")
 def get_transactions():
     return list_transactions()
+
+@app.get("/summary")
+def summary():
+    return summarize_by_month(list_transactions())
