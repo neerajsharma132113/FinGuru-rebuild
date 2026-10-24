@@ -1,4 +1,14 @@
 import { useState, useEffect } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
 
 const API_URL = "http://127.0.0.1:8000";
 
@@ -121,6 +131,33 @@ function Dashboard({ token, userEmail, onLogout }) {
             <p className="stat-value">
               {latest.savings_rate_percent === null ? "—" : latest.savings_rate_percent + "%"}
             </p>
+          </div>
+        </div>
+      )}
+
+      {summary.length > 0 && (
+        <div className="card">
+          <h2>Income vs expenses by month</h2>
+          <div style={{ width: "100%", height: 280 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={summary}>
+                <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                <XAxis dataKey="month" stroke="#8b90a7" />
+                <YAxis stroke="#8b90a7" />
+                <Tooltip
+                  formatter={(value) => "₹" + formatMoney(value)}
+                  contentStyle={{
+                    background: "#161a26",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 10,
+                  }}
+                  cursor={{ fill: "rgba(255,255,255,0.05)" }}
+                />
+                <Legend />
+                <Bar dataKey="income" name="Income" fill="#34d399" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="expenses" name="Expenses" fill="#fb7185" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}
