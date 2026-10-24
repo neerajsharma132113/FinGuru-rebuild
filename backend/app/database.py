@@ -1,6 +1,6 @@
 import sqlite3
 
-DB_FILE = "finguru.db"
+from app.config import DB_FILE
 
 
 def get_connection():
