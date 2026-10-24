@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import EmiCalculator from "./EmiCalculator";
 import {
   BarChart,
   Bar,
@@ -161,7 +162,7 @@ function Dashboard({ token, userEmail, onLogout }) {
           </div>
         </div>
       )}
-
+      <EmiCalculator />
       <div className="card">
         <h2>Add transaction</h2>
         <form className="form-row" onSubmit={handleAdd}>
