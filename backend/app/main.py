@@ -1,11 +1,13 @@
 import datetime
 from typing import Literal
 
-from fastapi import FastAPI, Query
+
 from pydantic import BaseModel, Field
 
 from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month
-from app.database import init_db, add_transaction, list_transactions
+from fastapi import FastAPI, Query, HTTPException
+from app.database import init_db, add_transaction, list_transactions, create_user
+from app.security import hash_password
 app = FastAPI(title="FinGuru")
 init_db()
 
@@ -15,6 +17,10 @@ class NewTransaction(BaseModel):
     category: str = Field(min_length=1, max_length=50)
     kind: Literal["income", "expense"]
     amount: float = Field(gt=0, le=100000000)
+
+class NewUser(BaseModel):
+    email: str = Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=100)
+    password: str = Field(min_length=8, max_length=128)
 
 @app.get("/health")
 def health():
@@ -59,3 +65,13 @@ def get_transactions():
 @app.get("/summary")
 def summary():
     return summarize_by_month(list_transactions())
+
+
+@app.post("/register", status_code=201)
+def register(user: NewUser):
+    password_hash = hash_password(user.password)
+    try:
+        create_user(user.email, password_hash)
+    except ValueError:
+        raise HTTPException(status_code=409, detail="Email already registered")
+    return {"message": "User registered"}

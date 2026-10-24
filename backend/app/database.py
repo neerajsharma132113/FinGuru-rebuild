@@ -22,6 +22,15 @@ def init_db():
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL
+        )
+        """
+    )
     conn.commit()
     conn.close()
 
@@ -58,3 +67,29 @@ def list_transactions():
             "amount": row["amount_paise"] / 100,
         })
     return result
+
+def create_user(email, password_hash):
+    conn = get_connection()
+    try:
+        conn.execute(
+            "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+            (email.lower(), password_hash),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        raise ValueError("Email already registered")
+    finally:
+        conn.close()
+
+
+def get_user_by_email(email):
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT id, email, password_hash FROM users WHERE email = ?",
+        (email.lower(),),
+    ).fetchone()
+    conn.close()
+
+    if row is None:
+        return None
+    return {"id": row["id"], "email": row["email"], "password_hash": row["password_hash"]}

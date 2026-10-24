@@ -89,3 +89,29 @@ def test_summary():
     assert data[0]["month"] == "2026-10"
     assert data[0]["savings"] == 60000
     assert data[0]["savings_rate_percent"] == 75.0
+
+def test_register_ok_and_password_not_stored():
+    response = client.post("/register", json={"email": "Asha@Example.com", "password": "MySecret123"})
+    assert response.status_code == 201
+
+    user = database.get_user_by_email("asha@example.com")
+    assert user is not None
+    assert user["password_hash"] != "MySecret123"
+    assert user["password_hash"].startswith("$argon2")
+
+
+def test_register_duplicate_email():
+    body = {"email": "asha@example.com", "password": "MySecret123"}
+    client.post("/register", json=body)
+    response = client.post("/register", json=body)
+    assert response.status_code == 409
+
+
+def test_register_short_password():
+    response = client.post("/register", json={"email": "asha@example.com", "password": "abc"})
+    assert response.status_code == 422
+
+
+def test_register_bad_email():
+    response = client.post("/register", json={"email": "not-an-email", "password": "MySecret123"})
+    assert response.status_code == 422
