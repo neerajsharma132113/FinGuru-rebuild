@@ -141,3 +141,24 @@ def test_login_unknown_email():
     response = client.post("/login", json={"email": "nobody@example.com", "password": "MySecret123"})
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid email or password"
+
+
+def test_me_without_token():
+    response = client.get("/me")
+    assert response.status_code == 401
+
+
+def test_me_with_bad_token():
+    response = client.get("/me", headers={"Authorization": "Bearer garbage"})
+    assert response.status_code == 401
+
+
+def test_me_with_valid_token():
+    client.post("/register", json={"email": "asha@example.com", "password": "MySecret123"})
+    login = client.post("/login", json={"email": "asha@example.com", "password": "MySecret123"})
+    token = login.json()["access_token"]
+
+    response = client.get("/me", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert response.json()["email"] == "asha@example.com"
+    assert "password_hash" not in response.json()

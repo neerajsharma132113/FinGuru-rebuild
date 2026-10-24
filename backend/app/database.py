@@ -93,3 +93,15 @@ def get_user_by_email(email):
     if row is None:
         return None
     return {"id": row["id"], "email": row["email"], "password_hash": row["password_hash"]}
+
+def get_user_by_id(user_id):
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT id, email FROM users WHERE id = ?",
+        (user_id,),
+    ).fetchone()
+    conn.close()
+
+    if row is None:
+        return None
+    return {"id": row["id"], "email": row["email"]}
