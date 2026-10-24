@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Dashboard from "./Dashboard";
 
 const API_URL = "http://127.0.0.1:8000";
 
@@ -10,7 +11,7 @@ function App() {
   const [error, setError] = useState("");
 
   async function handleLogin(event) {
-    event.preventDefault(); // stop the browser from reloading the page
+    event.preventDefault();
     setError("");
 
     try {
@@ -46,36 +47,31 @@ function App() {
   }
 
   if (token) {
-    return (
-      <div>
-        <h1>FinGuru</h1>
-        <p>Logged in as {userEmail}</p>
-        <button onClick={handleLogout}>Logout</button>
-      </div>
-    );
+    return <Dashboard token={token} userEmail={userEmail} onLogout={handleLogout} />;
   }
 
   return (
-    <div>
-      <h1>FinGuru</h1>
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <br />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <br />
-        <button type="submit">Login</button>
-      </form>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+    <div className="login-wrap">
+      <div className="card login-card">
+        <h1 className="brand">FinGuru</h1>
+        <p className="subtitle">Your personal financial copilot</p>
+        <form className="stack" onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button type="submit">Login</button>
+        </form>
+        {error && <p className="error">{error}</p>}
+      </div>
     </div>
   );
 }
