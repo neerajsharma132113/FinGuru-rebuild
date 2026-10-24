@@ -3,7 +3,8 @@ from typing import Literal
 
 
 from pydantic import BaseModel, Field
-
+from app.database import init_db, add_transaction, list_transactions, create_user, get_user_by_email
+from app.security import hash_password, check_password, create_access_token
 from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month
 from fastapi import FastAPI, Query, HTTPException
 from app.database import init_db, add_transaction, list_transactions, create_user
@@ -21,6 +22,12 @@ class NewTransaction(BaseModel):
 class NewUser(BaseModel):
     email: str = Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=100)
     password: str = Field(min_length=8, max_length=128)
+
+
+class LoginData(BaseModel):
+    email: str = Field(max_length=100)
+    password: str = Field(max_length=128)
+
 
 @app.get("/health")
 def health():
@@ -75,3 +82,11 @@ def register(user: NewUser):
     except ValueError:
         raise HTTPException(status_code=409, detail="Email already registered")
     return {"message": "User registered"}
+
+@app.post("/login")
+def login(data: LoginData):
+    user = get_user_by_email(data.email)
+    if user is None or not check_password(data.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    return {"access_token": create_access_token(user["id"]), "token_type": "bearer"}
+

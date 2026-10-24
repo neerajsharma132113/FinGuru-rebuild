@@ -1,9 +1,16 @@
 from fastapi.testclient import TestClient
 from app.main import app
 import pytest
-from app import database
-client = TestClient(app)
 
+client = TestClient(app)
+from app import database, security
+
+
+@pytest.fixture(autouse=True)
+def use_temp_db(tmp_path, monkeypatch):
+    monkeypatch.setattr(database, "DB_FILE", str(tmp_path / "test.db"))
+    monkeypatch.setattr(security, "SECRET_KEY", "test-secret-key-for-tests-only-0123456789")
+    database.init_db()
 
 def test_health():
     response = client.get("/health")
@@ -115,3 +122,22 @@ def test_register_short_password():
 def test_register_bad_email():
     response = client.post("/register", json={"email": "not-an-email", "password": "MySecret123"})
     assert response.status_code == 422
+
+def test_login_ok():
+    client.post("/register", json={"email": "asha@example.com", "password": "MySecret123"})
+    response = client.post("/login", json={"email": "asha@example.com", "password": "MySecret123"})
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+    assert security.read_access_token(token) is not None
+
+
+def test_login_wrong_password():
+    client.post("/register", json={"email": "asha@example.com", "password": "MySecret123"})
+    response = client.post("/login", json={"email": "asha@example.com", "password": "WrongPass999"})
+    assert response.status_code == 401
+
+
+def test_login_unknown_email():
+    response = client.post("/login", json={"email": "nobody@example.com", "password": "MySecret123"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid email or password"
