@@ -4,6 +4,7 @@ const API_URL = "http://127.0.0.1:8000";
 
 function Dashboard({ token, userEmail, onLogout }) {
   const [transactions, setTransactions] = useState([]);
+  const [summary, setSummary] = useState([]);
   const [date, setDate] = useState("");
   const [category, setCategory] = useState("");
   const [kind, setKind] = useState("expense");
@@ -26,8 +27,23 @@ function Dashboard({ token, userEmail, onLogout }) {
     setTransactions(await response.json());
   }
 
+  async function loadSummary() {
+    const response = await fetch(API_URL + "/summary", {
+      headers: { Authorization: "Bearer " + token },
+    });
+
+    if (response.status === 401) {
+      onLogout();
+      return;
+    }
+    if (response.ok) {
+      setSummary(await response.json());
+    }
+  }
+
   useEffect(() => {
     loadTransactions();
+    loadSummary();
   }, []);
 
   async function handleAdd(event) {
@@ -60,6 +76,7 @@ function Dashboard({ token, userEmail, onLogout }) {
     setCategory("");
     setAmount("");
     loadTransactions();
+    loadSummary();
   }
 
   function formatMoney(value) {
@@ -68,6 +85,8 @@ function Dashboard({ token, userEmail, onLogout }) {
       maximumFractionDigits: 2,
     });
   }
+
+  const latest = summary.length > 0 ? summary[summary.length - 1] : null;
 
   return (
     <div className="page">
@@ -80,6 +99,31 @@ function Dashboard({ token, userEmail, onLogout }) {
           </button>
         </div>
       </div>
+
+      {latest && (
+        <div className="stats">
+          <div className="card stat">
+            <p className="stat-label">Income · {latest.month}</p>
+            <p className="stat-value green">₹{formatMoney(latest.income)}</p>
+          </div>
+          <div className="card stat">
+            <p className="stat-label">Expenses · {latest.month}</p>
+            <p className="stat-value red">₹{formatMoney(latest.expenses)}</p>
+          </div>
+          <div className="card stat">
+            <p className="stat-label">Savings</p>
+            <p className={"stat-value " + (latest.savings >= 0 ? "green" : "red")}>
+              ₹{formatMoney(latest.savings)}
+            </p>
+          </div>
+          <div className="card stat">
+            <p className="stat-label">Savings rate</p>
+            <p className="stat-value">
+              {latest.savings_rate_percent === null ? "—" : latest.savings_rate_percent + "%"}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <h2>Add transaction</h2>
