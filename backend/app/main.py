@@ -5,8 +5,7 @@ from fastapi import FastAPI, Query, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
-
-from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month
+from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month, simulate_income_change
 from app.database import init_db, add_transaction, list_transactions, create_user, get_user_by_email, get_user_by_id
 from app.security import hash_password, check_password, create_access_token, read_access_token
 
@@ -124,3 +123,11 @@ def login(data: LoginData):
 @app.get("/me")
 def me(current_user: dict = Depends(get_current_user)):
     return current_user
+
+@app.get("/simulate/income-change")
+def income_change(
+    monthly_income: float = Query(gt=0),
+    monthly_expenses: float = Query(ge=0),
+    income_change_percent: float = Query(ge=-100, le=1000),
+):
+    return simulate_income_change(monthly_income, monthly_expenses, income_change_percent)

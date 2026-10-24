@@ -121,3 +121,38 @@ def summarize_by_month(transactions):
         })
 
     return result
+
+def simulate_income_change(monthly_income, monthly_expenses, income_change_percent):
+    # 1. Validate inputs
+    if monthly_income <= 0:
+        raise ValueError("Monthly income must be greater than 0")
+    if monthly_expenses < 0:
+        raise ValueError("Monthly expenses cannot be negative")
+    if income_change_percent < -100 or income_change_percent > 1000:
+        raise ValueError("Income change must be between -100 and 1000 percent")
+
+    # 2. New income after the change
+    new_income = monthly_income * (1 + income_change_percent / 100)
+
+    # 3. Savings before and after
+    savings_before = monthly_income - monthly_expenses
+    savings_after = new_income - monthly_expenses
+
+    rate_before = round(savings_before / monthly_income * 100, 2)
+    if new_income > 0:
+        rate_after = round(savings_after / new_income * 100, 2)
+    else:
+        rate_after = None  # no income, so a rate makes no sense
+
+    return {
+        "before": {
+            "income": round(monthly_income, 2),
+            "savings": round(savings_before, 2),
+            "savings_rate_percent": rate_before,
+        },
+        "after": {
+            "income": round(new_income, 2),
+            "savings": round(savings_after, 2),
+            "savings_rate_percent": rate_after,
+        },
+    }

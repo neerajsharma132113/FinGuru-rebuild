@@ -198,3 +198,20 @@ def test_cors_blocks_other_origin():
         headers={"Origin": "http://evil.com", "Access-Control-Request-Method": "GET"},
     )
     assert "access-control-allow-origin" not in response.headers
+
+def test_simulate_income_change_ok():
+    response = client.get(
+        "/simulate/income-change",
+        params={"monthly_income": 80000, "monthly_expenses": 40000, "income_change_percent": -25},
+    )
+    assert response.status_code == 200
+    assert response.json()["after"]["savings"] == 20000
+    assert response.json()["after"]["savings_rate_percent"] == 33.33
+
+
+def test_simulate_income_change_bad_percent():
+    response = client.get(
+        "/simulate/income-change",
+        params={"monthly_income": 80000, "monthly_expenses": 40000, "income_change_percent": -101},
+    )
+    assert response.status_code == 422

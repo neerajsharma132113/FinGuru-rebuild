@@ -266,3 +266,43 @@ td:last-child {
 .stat-value.red {
   color: var(--red);
 }
+
+input[type="range"] {
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.slider-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.slider-label strong {
+  color: var(--text);
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.stat-line {
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.note {
+  margin: 12px 0 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
