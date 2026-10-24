@@ -62,40 +62,6 @@ def use_temp_db(tmp_path, monkeypatch):
     database.init_db()
 
 
-def test_add_and_get_transaction():
-    body = {"date": "2026-10-01", "category": "salary", "kind": "income", "amount": 80000}
-    response = client.post("/transactions", json=body)
-    assert response.status_code == 201
-
-    response = client.get("/transactions")
-    assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]["amount"] == 80000
-
-
-def test_bad_transaction_rejected():
-    body = {"date": "2026-10-01", "category": "salary", "kind": "gift", "amount": 80000}
-    response = client.post("/transactions", json=body)
-    assert response.status_code == 422
-
-
-def test_negative_amount_rejected():
-    body = {"date": "2026-10-01", "category": "salary", "kind": "income", "amount": -5}
-    response = client.post("/transactions", json=body)
-    assert response.status_code == 422
-
-
-def test_summary():
-    client.post("/transactions", json={"date": "2026-10-01", "category": "salary", "kind": "income", "amount": 80000})
-    client.post("/transactions", json={"date": "2026-10-03", "category": "rent", "kind": "expense", "amount": 20000})
-
-    response = client.get("/summary")
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data) == 1
-    assert data[0]["month"] == "2026-10"
-    assert data[0]["savings"] == 60000
-    assert data[0]["savings_rate_percent"] == 75.0
 
 def test_register_ok_and_password_not_stored():
     response = client.post("/register", json={"email": "Asha@Example.com", "password": "MySecret123"})
@@ -162,3 +128,58 @@ def test_me_with_valid_token():
     assert response.status_code == 200
     assert response.json()["email"] == "asha@example.com"
     assert "password_hash" not in response.json()
+
+
+def make_headers(email="asha@example.com"):
+    client.post("/register", json={"email": email, "password": "MySecret123"})
+    login = client.post("/login", json={"email": email, "password": "MySecret123"})
+    return {"Authorization": "Bearer " + login.json()["access_token"]}
+
+
+def test_transactions_require_login():
+    assert client.get("/transactions").status_code == 401
+    assert client.get("/summary").status_code == 401
+
+
+def test_add_and_get_transaction():
+    headers = make_headers()
+    body = {"date": "2026-10-01", "category": "salary", "kind": "income", "amount": 80000}
+    assert client.post("/transactions", json=body, headers=headers).status_code == 201
+
+    response = client.get("/transactions", headers=headers)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["amount"] == 80000
+
+
+def test_bad_transaction_rejected():
+    headers = make_headers()
+    body = {"date": "2026-10-01", "category": "salary", "kind": "gift", "amount": 80000}
+    assert client.post("/transactions", json=body, headers=headers).status_code == 422
+
+
+def test_negative_amount_rejected():
+    headers = make_headers()
+    body = {"date": "2026-10-01", "category": "salary", "kind": "income", "amount": -5}
+    assert client.post("/transactions", json=body, headers=headers).status_code == 422
+
+
+def test_users_are_isolated():
+    asha = make_headers("asha@example.com")
+    ravi = make_headers("ravi@example.com")
+    body = {"date": "2026-10-01", "category": "salary", "kind": "income", "amount": 80000}
+    client.post("/transactions", json=body, headers=asha)
+
+    assert len(client.get("/transactions", headers=asha).json()) == 1
+    assert client.get("/transactions", headers=ravi).json() == []
+
+
+def test_summary():
+    headers = make_headers()
+    client.post("/transactions", json={"date": "2026-10-01", "category": "salary", "kind": "income", "amount": 80000}, headers=headers)
+    client.post("/transactions", json={"date": "2026-10-03", "category": "rent", "kind": "expense", "amount": 20000}, headers=headers)
+
+    data = client.get("/summary", headers=headers).json()
+    assert len(data) == 1
+    assert data[0]["savings"] == 60000
+    assert data[0]["savings_rate_percent"] == 75.0

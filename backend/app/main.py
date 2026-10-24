@@ -82,19 +82,19 @@ def affordability(
 
 
 @app.post("/transactions", status_code=201)
-def create_transaction(transaction: NewTransaction):
-    add_transaction(str(transaction.date), transaction.category, transaction.kind, transaction.amount)
+def create_transaction(transaction: NewTransaction, current_user: dict = Depends(get_current_user)):
+    add_transaction(current_user["id"], str(transaction.date), transaction.category, transaction.kind, transaction.amount)
     return {"message": "Transaction added"}
 
 
 @app.get("/transactions")
-def get_transactions():
-    return list_transactions()
+def get_transactions(current_user: dict = Depends(get_current_user)):
+    return list_transactions(current_user["id"])
 
 
 @app.get("/summary")
-def summary():
-    return summarize_by_month(list_transactions())
+def summary(current_user: dict = Depends(get_current_user)):
+    return summarize_by_month(list_transactions(current_user["id"]))
 
 
 @app.post("/register", status_code=201)

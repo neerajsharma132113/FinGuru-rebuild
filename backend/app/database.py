@@ -13,8 +13,9 @@ def init_db():
     conn = get_connection()
     conn.execute(
         """
-        CREATE TABLE IF NOT EXISTS transactions (
+            CREATE TABLE IF NOT EXISTS transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
             date TEXT NOT NULL,
             category TEXT NOT NULL,
             kind TEXT NOT NULL,
@@ -35,7 +36,7 @@ def init_db():
     conn.close()
 
 
-def add_transaction(date, category, kind, amount):
+def add_transaction(user_id, date, category, kind, amount):
     if kind not in ("income", "expense"):
         raise ValueError("kind must be 'income' or 'expense'")
     if amount <= 0:
@@ -43,17 +44,17 @@ def add_transaction(date, category, kind, amount):
 
     conn = get_connection()
     conn.execute(
-        "INSERT INTO transactions (date, category, kind, amount_paise) VALUES (?, ?, ?, ?)",
-        (date, category, kind, round(amount * 100)),
+        "INSERT INTO transactions (user_id, date, category, kind, amount_paise) VALUES (?, ?, ?, ?, ?)",
+        (user_id, date, category, kind, round(amount * 100)),
     )
     conn.commit()
     conn.close()
 
-
-def list_transactions():
+def list_transactions(user_id):
     conn = get_connection()
     rows = conn.execute(
-        "SELECT id, date, category, kind, amount_paise FROM transactions ORDER BY id"
+        "SELECT id, date, category, kind, amount_paise FROM transactions WHERE user_id = ? ORDER BY id",
+        (user_id,),
     ).fetchall()
     conn.close()
 
