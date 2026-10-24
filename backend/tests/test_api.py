@@ -183,3 +183,18 @@ def test_summary():
     assert len(data) == 1
     assert data[0]["savings"] == 60000
     assert data[0]["savings_rate_percent"] == 75.0
+
+def test_cors_allows_frontend():
+    response = client.options(
+        "/emi",
+        headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "GET"},
+    )
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+def test_cors_blocks_other_origin():
+    response = client.options(
+        "/emi",
+        headers={"Origin": "http://evil.com", "Access-Control-Request-Method": "GET"},
+    )
+    assert "access-control-allow-origin" not in response.headers
