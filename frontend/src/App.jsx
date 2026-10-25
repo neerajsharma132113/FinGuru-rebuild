@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Dashboard from "./Dashboard";
+import Dashboard from "./dashboard";
 
 const API_URL = "http://127.0.0.1:8000";
 
@@ -20,6 +20,11 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email, password: password }),
       });
+
+      if (response.status === 429) {
+        setError("Too many failed attempts. Try again in 15 minutes.");
+        return;
+      }
 
       if (!response.ok) {
         setError("Invalid email or password");

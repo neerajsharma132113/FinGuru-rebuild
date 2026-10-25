@@ -58,6 +58,7 @@ def test_affordability_ok():
 
 @pytest.fixture(autouse=True)
 def use_temp_db(tmp_path, monkeypatch):
+    security.failed_logins.clear()
     monkeypatch.setattr(database, "DB_FILE", str(tmp_path / "test.db"))
     database.init_db()
 
@@ -271,3 +272,28 @@ def test_next_best_action_bad_input():
         },
     )
     assert response.status_code == 422
+
+
+def test_login_locked_after_five_failures():
+    client.post("/register", json={"email": "asha@example.com", "password": "MySecret123"})
+    wrong = {"email": "asha@example.com", "password": "WrongPass999"}
+
+    for i in range(5):
+        assert client.post("/login", json=wrong).status_code == 401
+
+    # now locked, even with the CORRECT password
+    right = {"email": "asha@example.com", "password": "MySecret123"}
+    assert client.post("/login", json=right).status_code == 429
+
+
+def test_successful_login_resets_failures():
+    client.post("/register", json={"email": "asha@example.com", "password": "MySecret123"})
+    wrong = {"email": "asha@example.com", "password": "WrongPass999"}
+    right = {"email": "asha@example.com", "password": "MySecret123"}
+
+    for i in range(4):
+        client.post("/login", json=wrong)
+    assert client.post("/login", json=right).status_code == 200
+
+    for i in range(4):
+        assert client.post("/login", json=wrong).status_code == 401

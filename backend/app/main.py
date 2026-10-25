@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month, simulate_income_change, simulate_loan, next_best_action
 from app.database import init_db, add_transaction, list_transactions, create_user, get_user_by_email, get_user_by_id
-from app.security import hash_password, check_password, create_access_token, read_access_token
+from app.security import hash_password, check_password, create_access_token, read_access_token, is_locked, record_failure, clear_failures
 
 app = FastAPI(title="FinGuru")
 app.add_middleware(
@@ -114,9 +114,15 @@ def register(user: NewUser):
 
 @app.post("/login")
 def login(data: LoginData):
+    if is_locked(data.email):
+        raise HTTPException(status_code=429, detail="Too many failed attempts. Try again in 15 minutes.")
+
     user = get_user_by_email(data.email)
     if user is None or not check_password(data.password, user["password_hash"]):
+        record_failure(data.email)
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    clear_failures(data.email)
     return {"access_token": create_access_token(user["id"]), "token_type": "bearer"}
 
 
