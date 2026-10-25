@@ -1,5 +1,6 @@
 import datetime
 import jwt
+import time
 from app.config import SECRET_KEY
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -34,3 +35,36 @@ def read_access_token(token):
         return int(payload["sub"])
     except jwt.InvalidTokenError:
         return None
+
+MAX_FAILED_ATTEMPTS = 5
+LOCK_WINDOW_SECONDS = 15 * 60
+
+failed_logins = {}  # email -> list of times of failed attempts
+
+
+def get_recent_failures(email, now=None):
+    if now is None:
+        now = time.time()
+
+    recent = []
+    for attempt_time in failed_logins.get(email.lower(), []):
+        if now - attempt_time < LOCK_WINDOW_SECONDS:
+            recent.append(attempt_time)
+
+    failed_logins[email.lower()] = recent
+    return recent
+
+
+def is_locked(email, now=None):
+    return len(get_recent_failures(email, now)) >= MAX_FAILED_ATTEMPTS
+
+
+def record_failure(email, now=None):
+    if now is None:
+        now = time.time()
+    get_recent_failures(email, now)  # removes old attempts first
+    failed_logins[email.lower()].append(now)
+
+
+def clear_failures(email):
+    failed_logins.pop(email.lower(), None)
