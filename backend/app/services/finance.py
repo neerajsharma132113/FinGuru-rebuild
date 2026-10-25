@@ -156,3 +156,41 @@ def simulate_income_change(monthly_income, monthly_expenses, income_change_perce
             "savings_rate_percent": rate_after,
         },
     }
+
+def simulate_loan(monthly_income, monthly_expenses, loan_amount, annual_rate_percent, tenure_months):
+    # 1. Validate inputs (calculate_emi checks the loan values itself)
+    if monthly_income <= 0:
+        raise ValueError("Monthly income must be greater than 0")
+    if monthly_expenses < 0:
+        raise ValueError("Monthly expenses cannot be negative")
+
+    # 2. EMI for the new loan
+    loan = calculate_emi(loan_amount, annual_rate_percent, tenure_months)
+    emi = loan["emi"]
+
+    # 3. Savings before and after taking the loan
+    savings_before = monthly_income - monthly_expenses
+    savings_after = savings_before - emi
+
+    emi_to_income = round(emi / monthly_income * 100, 2)
+    rate_before = round(savings_before / monthly_income * 100, 2)
+    rate_after = round(savings_after / monthly_income * 100, 2)
+
+    # 4. Simple, inspectable rules
+    if savings_after < 0:
+        verdict = "unaffordable"
+    elif emi_to_income > 40:
+        verdict = "stretched"
+    else:
+        verdict = "ok"
+
+    return {
+        "emi": emi,
+        "total_interest": loan["total_interest"],
+        "emi_to_income_percent": emi_to_income,
+        "savings_before": round(savings_before, 2),
+        "savings_after": round(savings_after, 2),
+        "savings_rate_before_percent": rate_before,
+        "savings_rate_after_percent": rate_after,
+        "verdict": verdict,
+    }

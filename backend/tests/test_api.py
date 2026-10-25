@@ -215,3 +215,32 @@ def test_simulate_income_change_bad_percent():
         params={"monthly_income": 80000, "monthly_expenses": 40000, "income_change_percent": -101},
     )
     assert response.status_code == 422
+
+def test_simulate_loan_ok():
+    response = client.get(
+        "/simulate/loan",
+        params={
+            "monthly_income": 80000,
+            "monthly_expenses": 40000,
+            "loan_amount": 500000,
+            "annual_rate_percent": 10,
+            "tenure_months": 60,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["emi"] == 10623.52
+    assert response.json()["verdict"] == "ok"
+
+
+def test_simulate_loan_bad_input():
+    response = client.get(
+        "/simulate/loan",
+        params={
+            "monthly_income": 80000,
+            "monthly_expenses": 40000,
+            "loan_amount": -500000,
+            "annual_rate_percent": 10,
+            "tenure_months": 60,
+        },
+    )
+    assert response.status_code == 422

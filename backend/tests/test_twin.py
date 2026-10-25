@@ -1,5 +1,5 @@
 import pytest
-from app.services.finance import simulate_income_change
+from app.services.finance import simulate_income_change, simulate_loan
 
 
 def test_income_drop():
@@ -38,3 +38,36 @@ def test_bad_income():
 def test_bad_change():
     with pytest.raises(ValueError):
         simulate_income_change(80000, 40000, -101)
+
+def test_loan_ok():
+    result = simulate_loan(80000, 40000, 500000, 10, 60)
+    assert result["emi"] == 10623.52
+    assert result["emi_to_income_percent"] == 13.28
+    assert result["savings_before"] == 40000
+    assert result["savings_after"] == 29376.48
+    assert result["savings_rate_after_percent"] == 36.72
+    assert result["verdict"] == "ok"
+
+
+def test_loan_stretched():
+    # EMI is about 42% of income, but savings are still positive
+    result = simulate_loan(50000, 20000, 1000000, 10, 60)
+    assert result["savings_after"] > 0
+    assert result["verdict"] == "stretched"
+
+
+def test_loan_unaffordable():
+    # savings would go below zero
+    result = simulate_loan(50000, 40000, 500000, 10, 60)
+    assert result["savings_after"] == -623.52
+    assert result["verdict"] == "unaffordable"
+
+
+def test_loan_bad_income():
+    with pytest.raises(ValueError):
+        simulate_loan(0, 0, 500000, 10, 60)
+
+
+def test_loan_bad_amount():
+    with pytest.raises(ValueError):
+        simulate_loan(80000, 40000, -500000, 10, 60)
