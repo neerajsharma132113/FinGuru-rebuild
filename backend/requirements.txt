@@ -5,3 +5,11 @@ httpx2
 python-dotenv
 argon2-cffi
 pyjwt
+scikit-learn
+pandas
+numpy
+joblib
+scikit-learn
+pandas
+numpy
+joblib

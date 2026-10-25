@@ -1,6 +1,6 @@
 import datetime
 from typing import Literal
-
+from app.fraud import score_transaction
 from fastapi import FastAPI, Query, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
@@ -156,3 +156,16 @@ def get_next_best_action(
     emergency_fund: float = Query(ge=0),
 ):
     return next_best_action(monthly_income, monthly_expenses, monthly_emi, emergency_fund)
+
+@app.get("/fraud-score")
+def fraud_score(
+    amount: float = Query(gt=0, le=100000000),
+    hour: int = Query(ge=0, le=23),
+    is_foreign: int = Query(ge=0, le=1),
+    txns_last_24h: int = Query(ge=0, le=1000),
+    current_user: dict = Depends(get_current_user),
+):
+    try:
+        return score_transaction(amount, hour, is_foreign, txns_last_24h)
+    except RuntimeError:
+        raise HTTPException(status_code=503, detail="Fraud model not available")

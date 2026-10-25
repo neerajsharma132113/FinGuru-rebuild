@@ -3,7 +3,7 @@ from app.main import app
 import pytest
 
 client = TestClient(app)
-from app import database, security
+from app import database, security, fraud
 
 
 @pytest.fixture(autouse=True)
@@ -297,3 +297,35 @@ def test_successful_login_resets_failures():
 
     for i in range(4):
         assert client.post("/login", json=wrong).status_code == 401
+
+needs_model = pytest.mark.skipif(fraud.artifact is None, reason="Run ml/train_final.py first")
+
+
+def test_fraud_score_requires_login():
+    response = client.get(
+        "/fraud-score",
+        params={"amount": 450, "hour": 14, "is_foreign": 0, "txns_last_24h": 2},
+    )
+    assert response.status_code == 401
+
+
+@needs_model
+def test_fraud_score_ok():
+    headers = make_headers()
+    response = client.get(
+        "/fraud-score",
+        params={"amount": 9000, "hour": 2, "is_foreign": 1, "txns_last_24h": 8},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["flagged"] is True
+
+
+def test_fraud_score_bad_hour():
+    headers = make_headers()
+    response = client.get(
+        "/fraud-score",
+        params={"amount": 450, "hour": 24, "is_foreign": 0, "txns_last_24h": 2},
+        headers=headers,
+    )
+    assert response.status_code == 422
