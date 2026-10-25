@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import EmiCalculator from "./EmiCalculator";
 import DigitalTwin from "./DigitalTwin";
 import LoanScenario from "./LoanScenario";
+import NextBestAction from "./NextBestAction";
 import {
   BarChart,
   Bar,
@@ -167,6 +168,7 @@ function Dashboard({ token, userEmail, onLogout }) {
       <EmiCalculator />
       <DigitalTwin latest={latest} />
       <LoanScenario latest={latest} />
+      <NextBestAction latest={latest} />
       <div className="card">
         <h2>Add transaction</h2>
         <form className="form-row" onSubmit={handleAdd}>

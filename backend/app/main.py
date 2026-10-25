@@ -5,7 +5,7 @@ from fastapi import FastAPI, Query, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
-from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month, simulate_income_change, simulate_loan
+from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month, simulate_income_change, simulate_loan, next_best_action
 from app.database import init_db, add_transaction, list_transactions, create_user, get_user_by_email, get_user_by_id
 from app.security import hash_password, check_password, create_access_token, read_access_token
 
@@ -141,3 +141,12 @@ def loan_scenario(
     tenure_months: int = Query(gt=0, le=600),
 ):
     return simulate_loan(monthly_income, monthly_expenses, loan_amount, annual_rate_percent, tenure_months)
+
+@app.get("/next-best-action")
+def get_next_best_action(
+    monthly_income: float = Query(gt=0),
+    monthly_expenses: float = Query(ge=0),
+    monthly_emi: float = Query(ge=0),
+    emergency_fund: float = Query(ge=0),
+):
+    return next_best_action(monthly_income, monthly_expenses, monthly_emi, emergency_fund)

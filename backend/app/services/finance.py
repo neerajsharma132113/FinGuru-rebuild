@@ -194,3 +194,43 @@ def simulate_loan(monthly_income, monthly_expenses, loan_amount, annual_rate_per
         "savings_rate_after_percent": rate_after,
         "verdict": verdict,
     }
+
+MAX_EMI_PERCENT = 40
+EMERGENCY_FUND_MONTHS = 3
+
+
+def next_best_action(monthly_income, monthly_expenses, monthly_emi, emergency_fund):
+    # monthly_expenses means ALL spending, EMI included
+
+    # 1. Validate inputs
+    if monthly_income <= 0:
+        raise ValueError("Monthly income must be greater than 0")
+    if monthly_expenses < 0 or monthly_emi < 0 or emergency_fund < 0:
+        raise ValueError("Expenses, EMI and emergency fund cannot be negative")
+
+    # 2. Numbers the rules need
+    savings = monthly_income - monthly_expenses
+    emi_to_income = round(monthly_emi / monthly_income * 100, 2)
+    emergency_target = monthly_expenses * EMERGENCY_FUND_MONTHS
+
+    details = {
+        "monthly_savings": round(savings, 2),
+        "emi_to_income_percent": emi_to_income,
+        "emergency_fund_target": round(emergency_target, 2),
+    }
+
+    # 3. Rules, in priority order. The first match wins.
+    if savings < 0:
+        action = "HELP"
+        reason = "Your spending is higher than your income."
+    elif emi_to_income > MAX_EMI_PERCENT:
+        action = "WARN"
+        reason = "Your EMIs take more than " + str(MAX_EMI_PERCENT) + "% of your income."
+    elif emergency_fund < emergency_target:
+        action = "SAVE"
+        reason = "Your emergency fund is below " + str(EMERGENCY_FUND_MONTHS) + " months of expenses."
+    else:
+        action = "NO ACTION"
+        reason = "No issue found by the current rules."
+
+    return {"action": action, "reason": reason, "details": details}

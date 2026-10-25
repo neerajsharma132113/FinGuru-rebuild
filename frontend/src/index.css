@@ -330,3 +330,53 @@ button:disabled {
   border: 1px solid rgba(251, 113, 133, 0.4);
   color: var(--red);
 }
+.action-box {
+  margin-top: 16px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+.action-name {
+  margin: 0 0 4px 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.action-reason {
+  margin: 0;
+  color: var(--text);
+}
+
+.action-box.help {
+  background: rgba(251, 113, 133, 0.12);
+  border-color: rgba(251, 113, 133, 0.4);
+}
+.action-box.help .action-name {
+  color: var(--red);
+}
+
+.action-box.warn {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+.action-box.warn .action-name {
+  color: #fbbf24;
+}
+
+.action-box.save {
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.4);
+}
+.action-box.save .action-name {
+  color: var(--accent2);
+}
+
+.action-box.none {
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.4);
+}
+.action-box.none .action-name {
+  color: var(--green);
+}

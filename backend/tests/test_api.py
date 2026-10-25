@@ -244,3 +244,30 @@ def test_simulate_loan_bad_input():
         },
     )
     assert response.status_code == 422
+
+def test_next_best_action_ok():
+    response = client.get(
+        "/next-best-action",
+        params={
+            "monthly_income": 80000,
+            "monthly_expenses": 40000,
+            "monthly_emi": 10000,
+            "emergency_fund": 60000,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["action"] == "SAVE"
+    assert response.json()["details"]["emergency_fund_target"] == 120000
+
+
+def test_next_best_action_bad_input():
+    response = client.get(
+        "/next-best-action",
+        params={
+            "monthly_income": 0,
+            "monthly_expenses": 40000,
+            "monthly_emi": 10000,
+            "emergency_fund": 60000,
+        },
+    )
+    assert response.status_code == 422
