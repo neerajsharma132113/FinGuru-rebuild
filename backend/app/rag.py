@@ -1,5 +1,6 @@
 import os
-
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 BACKEND_FOLDER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KNOWLEDGE_FOLDER = os.path.join(BACKEND_FOLDER, "knowledge")
 
@@ -51,3 +52,31 @@ def load_chunks(folder=KNOWLEDGE_FOLDER, max_chars=500):
             })
 
     return chunks
+
+def search_chunks(question, chunks, top_k=3, min_score=0.1):
+    if question.strip() == "" or len(chunks) == 0:
+        return []
+
+    texts = []
+    for chunk in chunks:
+        texts.append(chunk["text"])
+
+    vectorizer = TfidfVectorizer(stop_words="english")
+    chunk_vectors = vectorizer.fit_transform(texts)
+    question_vector = vectorizer.transform([question])
+
+    scores = cosine_similarity(question_vector, chunk_vectors)[0]
+
+    # Chunk numbers sorted from best score to worst
+    ranked = sorted(range(len(chunks)), key=lambda i: scores[i], reverse=True)
+
+    results = []
+    for i in ranked[:top_k]:
+        if scores[i] >= min_score:
+            results.append({
+                "id": chunks[i]["id"],
+                "source": chunks[i]["source"],
+                "text": chunks[i]["text"],
+                "score": round(float(scores[i]), 3),
+            })
+    return results

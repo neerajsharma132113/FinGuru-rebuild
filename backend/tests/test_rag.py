@@ -1,6 +1,33 @@
 import pytest
-from app.rag import split_into_chunks, load_chunks
+from app.rag import split_into_chunks, load_chunks, search_chunks
+SAMPLE_CHUNKS = [
+    {"id": "a.md#0", "source": "a.md", "text": "An emergency fund covers unexpected costs like medical bills."},
+    {"id": "b.md#0", "source": "b.md", "text": "An EMI is a fixed monthly loan payment with interest and principal."},
+    {"id": "c.md#0", "source": "c.md", "text": "The savings rate is the share of income left after spending."},
+]
 
+
+def test_search_finds_emergency_fund():
+    results = search_chunks("what is an emergency fund", SAMPLE_CHUNKS)
+    assert results[0]["source"] == "a.md"
+
+
+def test_search_finds_loan_payment():
+    results = search_chunks("monthly loan payment", SAMPLE_CHUNKS)
+    assert results[0]["source"] == "b.md"
+
+
+def test_search_returns_nothing_for_unrelated_question():
+    assert search_chunks("best pizza in Mumbai", SAMPLE_CHUNKS) == []
+
+
+def test_search_empty_question():
+    assert search_chunks("   ", SAMPLE_CHUNKS) == []
+
+
+def test_search_respects_top_k():
+    results = search_chunks("loan payment fund savings income", SAMPLE_CHUNKS, top_k=1)
+    assert len(results) == 1
 
 def test_short_text_is_one_chunk():
     assert split_into_chunks("Hello\n\nWorld", 500) == ["Hello\n\nWorld"]
