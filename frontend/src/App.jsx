@@ -1,6 +1,10 @@
 import { useState } from "react";
 import Dashboard from "./dashboard";
-
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Overview from "./pages/Overview";
+import Transactions from "./pages/Transactions";
+import Loans from "./pages/Loans";
+import Simulate from "./pages/Simulate";
 const API_URL = "http://127.0.0.1:8000";
 
 function App() {
@@ -51,8 +55,22 @@ function App() {
     setUserEmail("");
   }
 
-  if (token) {
-    return <Dashboard token={token} userEmail={userEmail} onLogout={handleLogout} />;
+    if (token) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route
+            element={<Dashboard token={token} userEmail={userEmail} onLogout={handleLogout} />}
+          >
+            <Route path="/overview" element={<Overview />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/loans" element={<Loans />} />
+            <Route path="/simulate" element={<Simulate />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/overview" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
   }
 
   return (
