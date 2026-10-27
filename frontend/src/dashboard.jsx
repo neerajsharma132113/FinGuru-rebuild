@@ -53,6 +53,7 @@ function Dashboard({ token, userEmail, onLogout }) {
           <NavLink to="/transactions" className="nav-link">Transactions</NavLink>
           <NavLink to="/loans" className="nav-link">Loans</NavLink>
           <NavLink to="/simulate" className="nav-link">Simulate</NavLink>
+          <NavLink to="/fraud" className="nav-link">Fraud</NavLink>
         </nav>
         <div className="sidebar-bottom">
           <span className="user-chip">{userEmail}</span>

@@ -5,6 +5,7 @@ import Overview from "./pages/Overview";
 import Transactions from "./pages/Transactions";
 import Loans from "./pages/Loans";
 import Simulate from "./pages/Simulate";
+import Fraud from "./pages/Fraud";
 const API_URL = "http://127.0.0.1:8000";
 
 function App() {
@@ -66,6 +67,7 @@ function App() {
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/loans" element={<Loans />} />
             <Route path="/simulate" element={<Simulate />} />
+            <Route path="/fraud" element={<Fraud />} />
           </Route>
           <Route path="*" element={<Navigate to="/overview" replace />} />
         </Routes>
