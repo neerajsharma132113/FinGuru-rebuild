@@ -1,11 +1,10 @@
 import datetime
 from typing import Literal
 
-from fastapi import FastAPI, Query, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
-
+from fastapi import FastAPI, Query, Path, HTTPException, Depends
 from app.services.finance import (
     calculate_emi,
     calculate_schedule,
@@ -23,6 +22,7 @@ from app.database import (
     create_user,
     get_user_by_email,
     get_user_by_id,
+    delete_transaction,
 )
 from app.security import (
     hash_password,
@@ -41,7 +41,7 @@ app = FastAPI(title="FinGuru")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
@@ -199,6 +199,15 @@ def create_transaction(transaction: NewTransaction, current_user: dict = Depends
 def get_transactions(current_user: dict = Depends(get_current_user)):
     return list_transactions(current_user["id"])
 
+@app.delete("/transactions/{transaction_id}")
+def remove_transaction(
+    transaction_id: int = Path(gt=0),
+    current_user: dict = Depends(get_current_user),
+):
+    deleted = delete_transaction(current_user["id"], transaction_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return {"message": "Transaction deleted"}
 
 @app.get("/summary")
 def summary(current_user: dict = Depends(get_current_user)):

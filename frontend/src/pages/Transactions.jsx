@@ -44,6 +44,29 @@ function Transactions() {
     reload();
   }
 
+  async function handleDelete(id, label) {
+    const sure = window.confirm("Delete this transaction (" + label + ")? This cannot be undone.");
+    if (!sure) {
+      return;
+    }
+    setError("");
+
+    const response = await fetch(API_URL + "/transactions/" + id, {
+      method: "DELETE",
+      headers: { Authorization: "Bearer " + token },
+    });
+
+    if (response.status === 401) {
+      onLogout();
+      return;
+    }
+    if (!response.ok) {
+      setError("Could not delete that transaction");
+      return;
+    }
+    reload();
+  }
+
   return (
     <div>
       <h2 className="page-title">Transactions</h2>
@@ -88,6 +111,7 @@ function Transactions() {
                 <th>Category</th>
                 <th>Type</th>
                 <th style={{ textAlign: "right" }}>Amount</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -100,6 +124,14 @@ function Transactions() {
                   </td>
                   <td className={"amount " + t.kind}>
                     {t.kind === "income" ? "+" : "−"}₹{formatMoney(t.amount)}
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    <button
+                      className="danger"
+                      onClick={() => handleDelete(t.id, t.category + " ₹" + formatMoney(t.amount))}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}

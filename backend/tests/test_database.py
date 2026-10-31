@@ -36,3 +36,16 @@ def test_users_cannot_see_each_others_data():
     database.add_transaction(2, "2026-10-02", "rent", "expense", 9000)
     assert len(database.list_transactions(1)) == 1
     assert database.list_transactions(2)[0]["category"] == "rent"
+
+def test_delete_own_transaction():
+    database.add_transaction(1, "2026-10-01", "salary", "income", 80000)
+    row_id = database.list_transactions(1)[0]["id"]
+    assert database.delete_transaction(1, row_id) is True
+    assert database.list_transactions(1) == []
+
+
+def test_cannot_delete_another_users_transaction():
+    database.add_transaction(1, "2026-10-01", "salary", "income", 80000)
+    row_id = database.list_transactions(1)[0]["id"]
+    assert database.delete_transaction(2, row_id) is False
+    assert len(database.list_transactions(1)) == 1

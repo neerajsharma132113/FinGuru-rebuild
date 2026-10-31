@@ -539,3 +539,14 @@ button:disabled {
   gap: 10px;
   margin-top: 12px;
 }
+button.danger {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  background: rgba(251, 113, 133, 0.15);
+  border: 1px solid rgba(251, 113, 133, 0.4);
+  color: var(--red);
+}
+
+button.danger:hover {
+  box-shadow: 0 4px 14px rgba(251, 113, 133, 0.3);
+}

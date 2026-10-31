@@ -391,3 +391,37 @@ def test_health_check_bad_input():
     headers = make_headers()
     response = client.get("/health-check", params={"monthly_emi": -1, "emergency_fund": 0}, headers=headers)
     assert response.status_code == 422
+
+def add_one(headers):
+    body = {"date": "2026-10-01", "category": "salary", "kind": "income", "amount": 80000}
+    client.post("/transactions", json=body, headers=headers)
+    return client.get("/transactions", headers=headers).json()[0]["id"]
+
+
+def test_delete_requires_login():
+    assert client.delete("/transactions/1").status_code == 401
+
+
+def test_delete_own_transaction_api():
+    headers = make_headers()
+    row_id = add_one(headers)
+    assert client.delete("/transactions/" + str(row_id), headers=headers).status_code == 200
+    assert client.get("/transactions", headers=headers).json() == []
+
+
+def test_delete_other_users_transaction_is_404():
+    asha = make_headers("asha@example.com")
+    ravi = make_headers("ravi@example.com")
+    row_id = add_one(asha)
+    assert client.delete("/transactions/" + str(row_id), headers=ravi).status_code == 404
+    assert len(client.get("/transactions", headers=asha).json()) == 1
+
+
+def test_delete_unknown_id_is_404():
+    headers = make_headers()
+    assert client.delete("/transactions/99999", headers=headers).status_code == 404
+
+
+def test_delete_bad_id_is_422():
+    headers = make_headers()
+    assert client.delete("/transactions/0", headers=headers).status_code == 422

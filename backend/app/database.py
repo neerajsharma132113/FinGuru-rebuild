@@ -106,3 +106,14 @@ def get_user_by_id(user_id):
     if row is None:
         return None
     return {"id": row["id"], "email": row["email"]}
+
+def delete_transaction(user_id, transaction_id):
+    conn = get_connection()
+    cursor = conn.execute(
+        "DELETE FROM transactions WHERE id = ? AND user_id = ?",
+        (transaction_id, user_id),
+    )
+    conn.commit()
+    deleted = cursor.rowcount > 0  # rowcount = how many rows were removed
+    conn.close()
+    return deleted
