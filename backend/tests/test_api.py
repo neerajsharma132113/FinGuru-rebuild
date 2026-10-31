@@ -353,3 +353,41 @@ def test_ask_refuses_out_of_scope():
 def test_ask_too_short():
     headers = make_headers()
     assert client.get("/ask", params={"question": "hi"}, headers=headers).status_code == 422
+
+def test_health_check_requires_login():
+    response = client.get("/health-check", params={"monthly_emi": 0, "emergency_fund": 0})
+    assert response.status_code == 401
+
+
+def test_health_check_no_data():
+    headers = make_headers()
+    response = client.get("/health-check", params={"monthly_emi": 0, "emergency_fund": 0}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["status"] == "no_data"
+
+
+def test_health_check_uses_own_data():
+    headers = make_headers()
+    client.post("/transactions", json={"date": "2026-10-01", "category": "salary", "kind": "income", "amount": 80000}, headers=headers)
+    client.post("/transactions", json={"date": "2026-10-05", "category": "rent", "kind": "expense", "amount": 40000}, headers=headers)
+
+    response = client.get("/health-check", params={"monthly_emi": 10000, "emergency_fund": 500000}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    assert response.json()["savings"] == 40000
+    assert response.json()["action"] == "NO ACTION"
+
+
+def test_health_check_ignores_other_users_data():
+    asha = make_headers("asha@example.com")
+    ravi = make_headers("ravi@example.com")
+    client.post("/transactions", json={"date": "2026-10-01", "category": "salary", "kind": "income", "amount": 80000}, headers=asha)
+
+    response = client.get("/health-check", params={"monthly_emi": 0, "emergency_fund": 0}, headers=ravi)
+    assert response.json()["status"] == "no_data"
+
+
+def test_health_check_bad_input():
+    headers = make_headers()
+    response = client.get("/health-check", params={"monthly_emi": -1, "emergency_fund": 0}, headers=headers)
+    assert response.status_code == 422

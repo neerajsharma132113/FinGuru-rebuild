@@ -5,10 +5,10 @@ from fastapi import FastAPI, Query, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
-from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month, simulate_income_change, simulate_loan, next_best_action
 from app.database import init_db, add_transaction, list_transactions, create_user, get_user_by_email, get_user_by_id
 from app.security import hash_password, check_password, create_access_token, read_access_token, is_locked, record_failure, clear_failures
 from app.rag import load_chunks, search_chunks
+from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month, simulate_income_change, simulate_loan, next_best_action, health_check
 
 app = FastAPI(title="FinGuru")
 app.add_middleware(
@@ -195,3 +195,12 @@ def ask(
         "message": "Passages from the knowledge notes (general education, not personal advice):",
         "sources": results,
     }
+
+@app.get("/health-check")
+def get_health_check(
+    monthly_emi: float = Query(ge=0, le=100000000),
+    emergency_fund: float = Query(ge=0, le=100000000),
+    current_user: dict = Depends(get_current_user),
+):
+    transactions = list_transactions(current_user["id"])
+    return health_check(transactions, monthly_emi, emergency_fund)

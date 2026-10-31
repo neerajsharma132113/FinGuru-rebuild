@@ -234,3 +234,44 @@ def next_best_action(monthly_income, monthly_expenses, monthly_emi, emergency_fu
         reason = "No issue found by the current rules."
 
     return {"action": action, "reason": reason, "details": details}
+def health_check(transactions, monthly_emi, emergency_fund):
+    months = summarize_by_month(transactions)
+
+    if len(months) == 0:
+        return {"status": "no_data", "message": "Add some transactions first."}
+
+    latest = months[-1]
+
+    if latest["income"] <= 0:
+        return {
+            "status": "no_income",
+            "month": latest["month"],
+            "message": "The latest month has no income recorded, so a check is not possible.",
+        }
+
+    # Trend: compare savings with the previous month
+    if len(months) < 2:
+        trend = "not enough data"
+    else:
+        change = latest["savings"] - months[-2]["savings"]
+        if change > 0:
+            trend = "improving"
+        elif change < 0:
+            trend = "worsening"
+        else:
+            trend = "flat"
+
+    advice = next_best_action(latest["income"], latest["expenses"], monthly_emi, emergency_fund)
+
+    return {
+        "status": "ok",
+        "month": latest["month"],
+        "income": latest["income"],
+        "expenses": latest["expenses"],
+        "savings": latest["savings"],
+        "savings_rate_percent": latest["savings_rate_percent"],
+        "savings_trend": trend,
+        "action": advice["action"],
+        "reason": advice["reason"],
+        "details": advice["details"],
+    }
