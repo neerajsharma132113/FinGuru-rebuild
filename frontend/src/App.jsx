@@ -6,7 +6,9 @@ import Transactions from "./pages/Transactions";
 import Loans from "./pages/Loans";
 import Simulate from "./pages/Simulate";
 import Fraud from "./pages/Fraud";
+import Ask from "./pages/Ask";
 const API_URL = "http://127.0.0.1:8000";
+
 
 function App() {
   const [email, setEmail] = useState("");
@@ -68,6 +70,7 @@ function App() {
             <Route path="/loans" element={<Loans />} />
             <Route path="/simulate" element={<Simulate />} />
             <Route path="/fraud" element={<Fraud />} />
+            <Route path="/ask" element={<Ask />} />
           </Route>
           <Route path="*" element={<Navigate to="/overview" replace />} />
         </Routes>
