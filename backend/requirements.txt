@@ -14,3 +14,4 @@ pandas
 numpy
 joblib
 langgraph
+fastmcp==4.1.4
