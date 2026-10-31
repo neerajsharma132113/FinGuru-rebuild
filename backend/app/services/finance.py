@@ -1,5 +1,20 @@
+import math
+
+MAX_AMOUNT = 100000000  # 10 crore rupees
+MAX_RATE_PERCENT = 100
+MAX_TENURE_MONTHS = 600
+
+
+def check_number(name, value, maximum):
+    if value > maximum:
+        raise ValueError(name + " is too large")
+    if not math.isfinite(value):
+        raise ValueError(name + " must be a real number")
 def calculate_emi(principal, annual_rate_percent, tenure_months):
     # 1. Validate inputs
+    check_number("Principal", principal, MAX_AMOUNT)
+    check_number("Interest rate", annual_rate_percent, MAX_RATE_PERCENT)
+    check_number("Tenure", tenure_months, MAX_TENURE_MONTHS)
     if principal <= 0:
         raise ValueError("Principal must be greater than 0")
     if annual_rate_percent < 0:
@@ -60,6 +75,10 @@ def calculate_schedule(principal, annual_rate_percent, tenure_months):
 
 def calculate_affordability(monthly_income, existing_emi, annual_rate_percent, tenure_months, max_emi_ratio=0.40):
     # 1. Validate inputs
+    check_number("Monthly income", monthly_income, MAX_AMOUNT)
+    check_number("Existing EMI", existing_emi, MAX_AMOUNT)
+    check_number("Interest rate", annual_rate_percent, MAX_RATE_PERCENT)
+    check_number("Tenure", tenure_months, MAX_TENURE_MONTHS)
     if monthly_income <= 0:
         raise ValueError("Monthly income must be greater than 0")
     if existing_emi < 0:
@@ -124,6 +143,9 @@ def summarize_by_month(transactions):
 
 def simulate_income_change(monthly_income, monthly_expenses, income_change_percent):
     # 1. Validate inputs
+    check_number("Monthly income", monthly_income, MAX_AMOUNT)
+    check_number("Monthly expenses", monthly_expenses, MAX_AMOUNT)
+    check_number("Income change", income_change_percent, 1000)
     if monthly_income <= 0:
         raise ValueError("Monthly income must be greater than 0")
     if monthly_expenses < 0:
@@ -159,6 +181,8 @@ def simulate_income_change(monthly_income, monthly_expenses, income_change_perce
 
 def simulate_loan(monthly_income, monthly_expenses, loan_amount, annual_rate_percent, tenure_months):
     # 1. Validate inputs (calculate_emi checks the loan values itself)
+    check_number("Monthly income", monthly_income, MAX_AMOUNT)
+    check_number("Monthly expenses", monthly_expenses, MAX_AMOUNT)
     if monthly_income <= 0:
         raise ValueError("Monthly income must be greater than 0")
     if monthly_expenses < 0:
@@ -203,6 +227,10 @@ def next_best_action(monthly_income, monthly_expenses, monthly_emi, emergency_fu
     # monthly_expenses means ALL spending, EMI included
 
     # 1. Validate inputs
+    check_number("Monthly income", monthly_income, MAX_AMOUNT)
+    check_number("Monthly expenses", monthly_expenses, MAX_AMOUNT)
+    check_number("Monthly EMI", monthly_emi, MAX_AMOUNT)
+    check_number("Emergency fund", emergency_fund, MAX_AMOUNT)
     if monthly_income <= 0:
         raise ValueError("Monthly income must be greater than 0")
     if monthly_expenses < 0 or monthly_emi < 0 or emergency_fund < 0:

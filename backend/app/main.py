@@ -1,23 +1,54 @@
 import datetime
 from typing import Literal
-from app.fraud import score_transaction
+
 from fastapi import FastAPI, Query, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
-from fastapi.middleware.cors import CORSMiddleware
-from app.database import init_db, add_transaction, list_transactions, create_user, get_user_by_email, get_user_by_id
-from app.security import hash_password, check_password, create_access_token, read_access_token, is_locked, record_failure, clear_failures
+
+from app.services.finance import (
+    calculate_emi,
+    calculate_schedule,
+    calculate_affordability,
+    summarize_by_month,
+    simulate_income_change,
+    simulate_loan,
+    next_best_action,
+    health_check,
+)
+from app.database import (
+    init_db,
+    add_transaction,
+    list_transactions,
+    create_user,
+    get_user_by_email,
+    get_user_by_id,
+)
+from app.security import (
+    hash_password,
+    check_password,
+    create_access_token,
+    read_access_token,
+    is_locked,
+    record_failure,
+    clear_failures,
+)
+from app.fraud import score_transaction
 from app.rag import load_chunks, search_chunks
-from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month, simulate_income_change, simulate_loan, next_best_action, health_check
 
 app = FastAPI(title="FinGuru")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_methods=["GET", "POST"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
 init_db()
+
+MAX_MONEY = 100000000
+MAX_RATE = 100
 
 
 class NewTransaction(BaseModel):
@@ -54,6 +85,8 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer)
     return user
 
 
+# ---------- Public calculators ----------
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -61,17 +94,17 @@ def health():
 
 @app.get("/emi")
 def emi(
-    principal: float = Query(gt=0),
-    annual_rate_percent: float = Query(ge=0),
-    tenure_months: int = Query(gt=0),
+    principal: float = Query(gt=0, le=MAX_MONEY),
+    annual_rate_percent: float = Query(ge=0, le=MAX_RATE),
+    tenure_months: int = Query(gt=0, le=600),
 ):
     return calculate_emi(principal, annual_rate_percent, tenure_months)
 
 
 @app.get("/schedule")
 def schedule(
-    principal: float = Query(gt=0),
-    annual_rate_percent: float = Query(ge=0),
+    principal: float = Query(gt=0, le=MAX_MONEY),
+    annual_rate_percent: float = Query(ge=0, le=MAX_RATE),
     tenure_months: int = Query(gt=0, le=600),
 ):
     return calculate_schedule(principal, annual_rate_percent, tenure_months)
@@ -79,29 +112,45 @@ def schedule(
 
 @app.get("/affordability")
 def affordability(
-    monthly_income: float = Query(gt=0),
-    existing_emi: float = Query(ge=0),
-    annual_rate_percent: float = Query(ge=0),
+    monthly_income: float = Query(gt=0, le=MAX_MONEY),
+    existing_emi: float = Query(ge=0, le=MAX_MONEY),
+    annual_rate_percent: float = Query(ge=0, le=MAX_RATE),
     tenure_months: int = Query(gt=0, le=600),
 ):
     return calculate_affordability(monthly_income, existing_emi, annual_rate_percent, tenure_months)
 
 
-@app.post("/transactions", status_code=201)
-def create_transaction(transaction: NewTransaction, current_user: dict = Depends(get_current_user)):
-    add_transaction(current_user["id"], str(transaction.date), transaction.category, transaction.kind, transaction.amount)
-    return {"message": "Transaction added"}
+@app.get("/simulate/income-change")
+def income_change(
+    monthly_income: float = Query(gt=0, le=MAX_MONEY),
+    monthly_expenses: float = Query(ge=0, le=MAX_MONEY),
+    income_change_percent: float = Query(ge=-100, le=1000),
+):
+    return simulate_income_change(monthly_income, monthly_expenses, income_change_percent)
 
 
-@app.get("/transactions")
-def get_transactions(current_user: dict = Depends(get_current_user)):
-    return list_transactions(current_user["id"])
+@app.get("/simulate/loan")
+def loan_scenario(
+    monthly_income: float = Query(gt=0, le=MAX_MONEY),
+    monthly_expenses: float = Query(ge=0, le=MAX_MONEY),
+    loan_amount: float = Query(gt=0, le=MAX_MONEY),
+    annual_rate_percent: float = Query(ge=0, le=MAX_RATE),
+    tenure_months: int = Query(gt=0, le=600),
+):
+    return simulate_loan(monthly_income, monthly_expenses, loan_amount, annual_rate_percent, tenure_months)
 
 
-@app.get("/summary")
-def summary(current_user: dict = Depends(get_current_user)):
-    return summarize_by_month(list_transactions(current_user["id"]))
+@app.get("/next-best-action")
+def get_next_best_action(
+    monthly_income: float = Query(gt=0, le=MAX_MONEY),
+    monthly_expenses: float = Query(ge=0, le=MAX_MONEY),
+    monthly_emi: float = Query(ge=0, le=MAX_MONEY),
+    emergency_fund: float = Query(ge=0, le=MAX_MONEY),
+):
+    return next_best_action(monthly_income, monthly_expenses, monthly_emi, emergency_fund)
 
+
+# ---------- Accounts ----------
 
 @app.post("/register", status_code=201)
 def register(user: NewUser):
@@ -131,32 +180,42 @@ def login(data: LoginData):
 def me(current_user: dict = Depends(get_current_user)):
     return current_user
 
-@app.get("/simulate/income-change")
-def income_change(
-    monthly_income: float = Query(gt=0),
-    monthly_expenses: float = Query(ge=0),
-    income_change_percent: float = Query(ge=-100, le=1000),
-):
-    return simulate_income_change(monthly_income, monthly_expenses, income_change_percent)
 
-@app.get("/simulate/loan")
-def loan_scenario(
-    monthly_income: float = Query(gt=0),
-    monthly_expenses: float = Query(ge=0),
-    loan_amount: float = Query(gt=0),
-    annual_rate_percent: float = Query(ge=0),
-    tenure_months: int = Query(gt=0, le=600),
-):
-    return simulate_loan(monthly_income, monthly_expenses, loan_amount, annual_rate_percent, tenure_months)
+# ---------- Private data (login required) ----------
 
-@app.get("/next-best-action")
-def get_next_best_action(
-    monthly_income: float = Query(gt=0),
-    monthly_expenses: float = Query(ge=0),
-    monthly_emi: float = Query(ge=0),
-    emergency_fund: float = Query(ge=0),
+@app.post("/transactions", status_code=201)
+def create_transaction(transaction: NewTransaction, current_user: dict = Depends(get_current_user)):
+    add_transaction(
+        current_user["id"],
+        str(transaction.date),
+        transaction.category,
+        transaction.kind,
+        transaction.amount,
+    )
+    return {"message": "Transaction added"}
+
+
+@app.get("/transactions")
+def get_transactions(current_user: dict = Depends(get_current_user)):
+    return list_transactions(current_user["id"])
+
+
+@app.get("/summary")
+def summary(current_user: dict = Depends(get_current_user)):
+    return summarize_by_month(list_transactions(current_user["id"]))
+
+
+@app.get("/health-check")
+def get_health_check(
+    monthly_emi: float = Query(ge=0, le=MAX_MONEY),
+    emergency_fund: float = Query(ge=0, le=MAX_MONEY),
+    current_user: dict = Depends(get_current_user),
 ):
-    return next_best_action(monthly_income, monthly_expenses, monthly_emi, emergency_fund)
+    transactions = list_transactions(current_user["id"])
+    return health_check(transactions, monthly_emi, emergency_fund)
+
+
+# ---------- Fraud model ----------
 
 @app.get("/fraud-score")
 def fraud_score(
@@ -172,6 +231,7 @@ def fraud_score(
         raise HTTPException(status_code=503, detail="Fraud model not available")
 
 
+# ---------- Knowledge notes (retrieval only) ----------
 
 knowledge_chunks = load_chunks()  # loaded once, when the app starts
 
@@ -195,12 +255,3 @@ def ask(
         "message": "Passages from the knowledge notes (general education, not personal advice):",
         "sources": results,
     }
-
-@app.get("/health-check")
-def get_health_check(
-    monthly_emi: float = Query(ge=0, le=100000000),
-    emergency_fund: float = Query(ge=0, le=100000000),
-    current_user: dict = Depends(get_current_user),
-):
-    transactions = list_transactions(current_user["id"])
-    return health_check(transactions, monthly_emi, emergency_fund)
