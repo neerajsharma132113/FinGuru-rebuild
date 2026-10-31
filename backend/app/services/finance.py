@@ -275,3 +275,23 @@ def health_check(transactions, monthly_emi, emergency_fund):
         "reason": advice["reason"],
         "details": advice["details"],
     }
+
+def compare_loans(principal, rate_a, months_a, rate_b, months_b):
+    # calculate_emi checks every input and raises ValueError on bad values
+    loan_a = calculate_emi(principal, rate_a, months_a)
+    loan_b = calculate_emi(principal, rate_b, months_b)
+
+    if loan_a["total_payment"] < loan_b["total_payment"]:
+        cheaper = "a"
+    elif loan_b["total_payment"] < loan_a["total_payment"]:
+        cheaper = "b"
+    else:
+        cheaper = "same"
+
+    return {
+        "a": loan_a,
+        "b": loan_b,
+        "emi_difference": round(loan_b["emi"] - loan_a["emi"], 2),
+        "total_interest_difference": round(loan_b["total_interest"] - loan_a["total_interest"], 2),
+        "lower_total_cost": cheaper,
+    }
