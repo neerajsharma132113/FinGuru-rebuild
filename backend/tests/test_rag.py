@@ -65,3 +65,16 @@ def test_load_chunks_reads_markdown_only(tmp_path):
     assert len(chunks) == 2
     assert chunks[0]["id"] == "one.md#0"
     assert chunks[1]["source"] == "two.md"
+
+def test_coverage_blocks_single_word_match():
+    results = search_chunks("which mutual fund should I buy", SAMPLE_CHUNKS, min_score=0.0, min_coverage=0.5)
+    assert results == []
+
+
+def test_coverage_allows_full_match():
+    results = search_chunks("emergency fund", SAMPLE_CHUNKS, min_coverage=0.5)
+    assert results[0]["source"] == "a.md"
+
+
+def test_default_coverage_does_not_filter():
+    assert len(search_chunks("fund", SAMPLE_CHUNKS)) >= 1

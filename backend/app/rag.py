@@ -53,7 +53,7 @@ def load_chunks(folder=KNOWLEDGE_FOLDER, max_chars=500):
 
     return chunks
 
-def search_chunks(question, chunks, top_k=3, min_score=0.1):
+def search_chunks(question, chunks, top_k=3, min_score=0.1, min_coverage=0.0):
     if question.strip() == "" or len(chunks) == 0:
         return []
 
@@ -64,19 +64,27 @@ def search_chunks(question, chunks, top_k=3, min_score=0.1):
     vectorizer = TfidfVectorizer(stop_words="english")
     chunk_vectors = vectorizer.fit_transform(texts)
     question_vector = vectorizer.transform([question])
-
     scores = cosine_similarity(question_vector, chunk_vectors)[0]
 
-    # Chunk numbers sorted from best score to worst
+    analyzer = vectorizer.build_analyzer()
+    question_words = set(analyzer(question))
+
     ranked = sorted(range(len(chunks)), key=lambda i: scores[i], reverse=True)
 
     results = []
     for i in ranked[:top_k]:
-        if scores[i] >= min_score:
+        chunk_words = set(analyzer(chunks[i]["text"]))
+        if len(question_words) > 0:
+            coverage = len(question_words & chunk_words) / len(question_words)
+        else:
+            coverage = 0.0
+
+        if scores[i] >= min_score and coverage >= min_coverage:
             results.append({
                 "id": chunks[i]["id"],
                 "source": chunks[i]["source"],
                 "text": chunks[i]["text"],
                 "score": round(float(scores[i]), 3),
+                "coverage": round(coverage, 2),
             })
     return results

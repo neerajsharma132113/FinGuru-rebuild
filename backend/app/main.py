@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.services.finance import calculate_emi, calculate_schedule, calculate_affordability, summarize_by_month, simulate_income_change, simulate_loan, next_best_action
 from app.database import init_db, add_transaction, list_transactions, create_user, get_user_by_email, get_user_by_id
 from app.security import hash_password, check_password, create_access_token, read_access_token, is_locked, record_failure, clear_failures
+from app.rag import load_chunks, search_chunks
 
 app = FastAPI(title="FinGuru")
 app.add_middleware(
@@ -169,3 +170,28 @@ def fraud_score(
         return score_transaction(amount, hour, is_foreign, txns_last_24h)
     except RuntimeError:
         raise HTTPException(status_code=503, detail="Fraud model not available")
+
+
+
+knowledge_chunks = load_chunks()  # loaded once, when the app starts
+
+
+@app.get("/ask")
+def ask(
+    question: str = Query(min_length=3, max_length=300),
+    current_user: dict = Depends(get_current_user),
+):
+    results = search_chunks(question, knowledge_chunks, top_k=3, min_score=0.1, min_coverage=0.5)
+
+    if len(results) == 0:
+        return {
+            "found": False,
+            "message": "I could not find this in the FinGuru knowledge notes, so I won't guess.",
+            "sources": [],
+        }
+
+    return {
+        "found": True,
+        "message": "Passages from the knowledge notes (general education, not personal advice):",
+        "sources": results,
+    }

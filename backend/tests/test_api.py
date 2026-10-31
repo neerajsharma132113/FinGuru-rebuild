@@ -329,3 +329,27 @@ def test_fraud_score_bad_hour():
         headers=headers,
     )
     assert response.status_code == 422
+
+
+def test_ask_requires_login():
+    assert client.get("/ask", params={"question": "What is an EMI?"}).status_code == 401
+
+
+def test_ask_finds_source():
+    headers = make_headers()
+    response = client.get("/ask", params={"question": "What is an EMI?"}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["found"] is True
+    assert response.json()["sources"][0]["source"] == "emi.md"
+
+
+def test_ask_refuses_out_of_scope():
+    headers = make_headers()
+    response = client.get("/ask", params={"question": "Which mutual fund should I buy?"}, headers=headers)
+    assert response.json()["found"] is False
+    assert response.json()["sources"] == []
+
+
+def test_ask_too_short():
+    headers = make_headers()
+    assert client.get("/ask", params={"question": "hi"}, headers=headers).status_code == 422
