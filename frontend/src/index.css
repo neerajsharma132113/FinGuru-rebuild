@@ -909,3 +909,7 @@ a.btn.ghost {
     grid-template-columns: 1fr;
   }
 }
+.land-header .brand {
+  font-size: 3.1rem;
+  color: var(--accent);
+}

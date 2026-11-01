@@ -28,7 +28,6 @@ function Landing() {
     <div className="land">
       <header className="land-header">
         <Link to="/" className="brand">FinGuru</Link>
-        <Link to="/signin" className="btn ghost">Sign in</Link>
       </header>
 
       <main className="land-main">
