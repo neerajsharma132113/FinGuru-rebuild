@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 
-const API_URL = "http://127.0.0.1:8000";
+import { API_URL } from "./config";
 
 function Dashboard({ token, userEmail, onLogout }) {
   const [transactions, setTransactions] = useState([]);

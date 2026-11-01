@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { formatMoney } from "../format";
 
-const API_URL = "http://127.0.0.1:8000";
+import { API_URL } from "../config"
 
 function Transactions() {
   const { token, onLogout, transactions, reload } = useOutletContext();

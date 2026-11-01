@@ -7,7 +7,7 @@ import Loans from "./pages/Loans";
 import Simulate from "./pages/Simulate";
 import Fraud from "./pages/Fraud";
 import Ask from "./pages/Ask";
-const API_URL = "http://127.0.0.1:8000";
+import { API_URL } from "./config";
 
 
 function App() {

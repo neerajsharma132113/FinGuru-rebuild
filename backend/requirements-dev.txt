@@ -1,0 +1,5 @@
+-r requirements.txt
+fastmcp==4.1.4
+httpx2==2.16.0
+langgraph==1.2.19
+pytest==9.1.1
