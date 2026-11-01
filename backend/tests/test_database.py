@@ -64,3 +64,8 @@ def test_cannot_update_another_users_transaction():
     row_id = database.list_transactions(1)[0]["id"]
     assert database.update_transaction(2, row_id, "2026-10-02", "hacked", "income", 1) is False
     assert database.list_transactions(1)[0]["category"] == "salary"
+
+def test_count_users():
+    assert database.count_users() == 0
+    database.create_user("a@example.com", "hash")
+    assert database.count_users() == 1

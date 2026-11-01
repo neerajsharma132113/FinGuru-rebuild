@@ -17,3 +17,4 @@ def parse_origins(text):
 CORS_ORIGINS = parse_origins(
     os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
 )
+MAX_USERS = int(os.getenv("MAX_USERS", "200"))

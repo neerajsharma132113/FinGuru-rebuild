@@ -73,7 +73,7 @@ TF-IDF keyword search, evaluated on questions I wrote (18 tuning, 8 held-out):
 | Score cut-off only (tuning set) | 13/14 | 0/4 |
 | Plus coverage guard 0.5 (tuning set) | 11/14 | 4/4 |
 | Coverage guard 0.5 (held-out set) | 4/5 | 3/3 |
-
+| `MAX_USERS` | Maximum number of accounts (default 200); further signups are refused |
 How to read this:
 - Out-of-scope questions ("which mutual fund should I buy?") matched on a single shared word. The coverage guard fixes that, at the cost of 2 more missed real questions.
 - The question sets are tiny and written by me, so treat these as rough signals.

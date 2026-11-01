@@ -1,6 +1,6 @@
 import datetime
 from typing import Literal
-from app.config import CORS_ORIGINS
+from app.config import CORS_ORIGINS, MAX_USERS
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
@@ -23,7 +23,8 @@ from app.database import (
     get_user_by_email,
     get_user_by_id,
     delete_transaction,
-    update_transaction
+    update_transaction,
+    count_users,
 )
 from app.security import (
     hash_password,
@@ -155,6 +156,9 @@ def get_next_best_action(
 
 @app.post("/register", status_code=201)
 def register(user: NewUser):
+    if count_users() >= MAX_USERS:
+        raise HTTPException(status_code=403, detail="Signups are closed for this demo.")
+
     password_hash = hash_password(user.password)
     try:
         create_user(user.email, password_hash)

@@ -134,3 +134,9 @@ def update_transaction(user_id, transaction_id, date, category, kind, amount):
     updated = cursor.rowcount > 0
     conn.close()
     return updated
+
+def count_users():
+    conn = get_connection()
+    row = conn.execute("SELECT COUNT(*) AS total FROM users").fetchone()
+    conn.close()
+    return row["total"]

@@ -33,6 +33,10 @@ function SignIn({ onLoggedIn }) {
           setError("That email is already registered. Try signing in.");
           return;
         }
+        if (created.status === 403) {
+          setError("Signups are closed for this demo.");
+          return;
+        }
         if (!created.ok) {
           setError("Enter a valid email and a password of at least 8 characters.");
           return;

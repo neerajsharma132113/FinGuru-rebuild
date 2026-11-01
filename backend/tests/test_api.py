@@ -461,3 +461,12 @@ def test_edit_bad_body_is_422():
     row_id = add_one(headers)
     bad = {"date": "2026-10-02", "category": "bonus", "kind": "gift", "amount": 5000}
     assert client.put("/transactions/" + str(row_id), json=bad, headers=headers).status_code == 422
+
+def test_signup_cap(monkeypatch):
+    from app import main
+
+    monkeypatch.setattr(main, "MAX_USERS", 1)
+    first = client.post("/register", json={"email": "a@example.com", "password": "MySecret123"})
+    second = client.post("/register", json={"email": "b@example.com", "password": "MySecret123"})
+    assert first.status_code == 201
+    assert second.status_code == 403
