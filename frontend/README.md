@@ -5,11 +5,14 @@ It uses synthetic data only. Nothing here is financial advice.
 
 ## What it does
 
-- **Finance engine:** EMI, amortization schedule, loan affordability, monthly income/expense/savings summary
+- **Accounts:** landing page, create account, sign in (Argon2 password hashing, JWT)
+- **Transactions:** add, edit and delete income and expenses, private to each user
+- **Overview:** latest-month income, expenses, savings and savings rate, a compact monthly chart, recent transactions
+- **Loans:** EMI calculator, repayment schedule, affordability, and a "what if I take this loan" scenario
 - **Digital Twin:** what-if scenarios (income change, new loan) with before/after comparison
 - **Next Best Action:** readable rules (HELP, WARN, SAVE, NO ACTION), each result includes the reason and the numbers behind it
 - **Health check:** a workflow that summarizes the latest month, the savings trend and the next action. Built twice: as a plain function and as a LangGraph graph; a test checks both give identical results
-- **Fraud check:** a model trained on synthetic data scores a transaction and lists the main factors. It flags for review and never blocks anything
+- **Risk Analyzer:** a model trained on synthetic data scores a transaction and lists the main factors. It flags for review and never blocks anything
 - **Ask (retrieval chat):** answers only from three short notes written for this project, shows the source passages, and says "not found" instead of guessing. There is no LLM in this app
 - **MCP server:** three read-only tools (EMI calculator, next action, loan comparison) that wrap the same tested functions
 
@@ -21,18 +24,20 @@ React (Vite) --HTTP+JWT--> FastAPI --> service functions (finance.py, fraud.py, 
 MCP server (stdio) -----------------> the same service functions (no database access)
 ```
 
+Diagrams: [docs/architecture.md](docs/architecture.md)
+
 Rules I followed: all arithmetic lives in plain, tested Python functions; the API and MCP tools only validate inputs and call them.
-Detailed diagrams (system overview, risk-check flow, LangGraph workflow): [docs/architecture.md](docs/architecture.md)
+
 ## Security
 
-- Argon2 password hashing, JWT access tokens (30 minutes), per-user data isolation (every query filters by the user id from the token)
+- Argon2 password hashing, JWT access tokens (30 minutes), per-user data isolation (every query filters by the user id from the token; edit and delete check ownership in the SQL)
 - Login rate limiting: 5 failed attempts lock an email for 15 minutes
 - Input limits on every endpoint, and again inside the service functions, so MCP and the graph are protected too
-- CORS allows only the local frontend
+- CORS allows only the origins listed in `CORS_ORIGINS`
 - Hostile-input tests: SQL injection text, oversized fields, forged and unsigned tokens, `inf`/`nan`/huge numbers. Writing them found 9 real failures (crashes and unbounded values), which were then fixed
 - The MCP tools are read-only and never touch the database
 
-## Fraud model results (synthetic data)
+## Risk Analyzer model results (synthetic data)
 
 Data: 10,000 generated transactions, 2% fraud, fixed seed. Test set: 2,000 rows with 40 fraud cases.
 
@@ -63,76 +68,4 @@ TF-IDF keyword search, evaluated on questions I wrote (18 tuning, 8 held-out):
 How to read this:
 - Out-of-scope questions ("which mutual fund should I buy?") matched on a single shared word. The coverage guard fixes that, at the cost of 2 more missed real questions.
 - The question sets are tiny and written by me, so treat these as rough signals.
-- Keyword search cannot match paraphrases. Embeddings would help but were not built.
-- The three notes are written for this project and do not cover regulations, tax or investments.
-
-## Run locally (Windows PowerShell)
-
-Backend:
-
-```powershell
-uv venv --python 3.11 .venv
-.venv\Scripts\Activate.ps1
-cd backend
-uv pip install -r requirements.txt
-Copy-Item .env.example .env
-```
-
-Put a long random value in `.env` as `SECRET_KEY`. Generate one with:
-
-```powershell
-python -c "import secrets; print(secrets.token_hex(32))"
-```
-
-Create the fraud model (from the project root):
-
-```powershell
-uv pip install -r ml\requirements.txt
-python ml\generate_data.py
-python ml\train_final.py
-```
-
-Start the API (from `backend`), then open http://127.0.0.1:8000/docs :
-
-```powershell
-python -m uvicorn app.main:app --reload
-```
-
-Frontend (second window):
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-Open http://localhost:5173
-
-MCP server (from `backend`, normally launched by an MCP client):
-
-```powershell
-python mcp_server.py
-python try_client.py
-```
-
-## Run tests
-
-```powershell
-cd backend
-python -m pytest -q
-```
-
-## Known limitations
-
-- Login rate limiting is in memory: it resets on restart and is per email only (no IP limit)
-- The access token lives in memory, so refreshing the page logs you out; tokens cannot be revoked
-- The dev database has no migrations
-- The fraud model is trained on synthetic data and has not been tested on real transactions
-- Next Best Action thresholds (40% EMI share, 3-month emergency fund) are assumptions, not professional advice
-- The Ask chat answers each question on its own (no memory of earlier messages)
-
-## Planned, not built
-
-- An LLM-written answer in the chat (skipped on purpose to keep the app deterministic)
-- Embedding-based retrieval, loading states in the UI
-- Docker, deployment, end-to-end tests
+- Keyword search cannot match paraphrases.
