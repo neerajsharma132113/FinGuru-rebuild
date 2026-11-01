@@ -1,56 +1,22 @@
 import { useState } from "react";
-import Dashboard from "./dashboard";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Dashboard from "./Dashboard";
+import Landing from "./pages/Landing";
+import SignIn from "./pages/SignIn";
 import Overview from "./pages/Overview";
 import Transactions from "./pages/Transactions";
 import Loans from "./pages/Loans";
 import Simulate from "./pages/Simulate";
 import Fraud from "./pages/Fraud";
 import Ask from "./pages/Ask";
-import { API_URL } from "./config";
-
 
 function App() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [token, setToken] = useState(null);
   const [userEmail, setUserEmail] = useState("");
-  const [error, setError] = useState("");
 
-  async function handleLogin(event) {
-    event.preventDefault();
-    setError("");
-
-    try {
-      const response = await fetch(API_URL + "/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email, password: password }),
-      });
-
-      if (response.status === 429) {
-        setError("Too many failed attempts. Try again in 15 minutes.");
-        return;
-      }
-
-      if (!response.ok) {
-        setError("Invalid email or password");
-        return;
-      }
-
-      const data = await response.json();
-
-      const meResponse = await fetch(API_URL + "/me", {
-        headers: { Authorization: "Bearer " + data.access_token },
-      });
-      const me = await meResponse.json();
-
-      setToken(data.access_token);
-      setUserEmail(me.email);
-      setPassword("");
-    } catch (err) {
-      setError("API not reachable");
-    }
+  function handleLoggedIn(newToken, email) {
+    setToken(newToken);
+    setUserEmail(email);
   }
 
   function handleLogout() {
@@ -58,9 +24,9 @@ function App() {
     setUserEmail("");
   }
 
-    if (token) {
-    return (
-      <BrowserRouter>
+  return (
+    <BrowserRouter>
+      {token ? (
         <Routes>
           <Route
             element={<Dashboard token={token} userEmail={userEmail} onLogout={handleLogout} />}
@@ -74,33 +40,14 @@ function App() {
           </Route>
           <Route path="*" element={<Navigate to="/overview" replace />} />
         </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  return (
-    <div className="login-wrap">
-      <div className="card login-card">
-        <h1 className="brand">FinGuru</h1>
-        <p className="subtitle">Your personal financial copilot</p>
-        <form className="stack" onSubmit={handleLogin}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button type="submit">Login</button>
-        </form>
-        {error && <p className="error">{error}</p>}
-      </div>
-    </div>
+      ) : (
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/signin" element={<SignIn onLoggedIn={handleLoggedIn} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      )}
+    </BrowserRouter>
   );
 }
 

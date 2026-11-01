@@ -6,7 +6,7 @@ function Fraud() {
 
   return (
     <div>
-      <h2 className="page-title">Fraud</h2>
+      <h2 className="page-title">Risk Analyzer</h2>
       <FraudCheck token={token} onLogout={onLogout} />
     </div>
   );

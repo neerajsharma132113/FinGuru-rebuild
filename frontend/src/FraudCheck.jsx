@@ -47,7 +47,7 @@ function FraudCheck({ token, onLogout }) {
 
   return (
     <div className="card">
-      <h2>Transaction fraud check</h2>
+      <h2>Transaction risk check</h2>
       <form className="stack" onSubmit={handleCheck}>
         <div className="form-row">
           <input
