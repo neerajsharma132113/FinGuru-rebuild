@@ -15,7 +15,16 @@ It uses synthetic data only. Nothing here is financial advice.
 - **Risk Analyzer:** a model trained on synthetic data scores a transaction and lists the main factors. It flags for review and never blocks anything
 - **Ask (retrieval chat):** answers only from three short notes written for this project, shows the source passages, and says "not found" instead of guessing. There is no LLM in this app
 - **MCP server:** three read-only tools (EMI calculator, next action, loan comparison) that wrap the same tested functions
+### Screenshots
 
+![Landing page](docs/screenshots/landing.png)
+
+![Overview](docs/screenshots/overview.png)
+
+![Risk Analyzer](docs/screenshots/risk-analyzer.png)
+
+![Ask](docs/screenshots/ask.png)
+*Screenshots use a demo account with made-up data.*
 ## Architecture
 
 ```
