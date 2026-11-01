@@ -10,14 +10,36 @@ function Transactions() {
   const [category, setCategory] = useState("");
   const [kind, setKind] = useState("expense");
   const [amount, setAmount] = useState("");
+  const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
 
-  async function handleAdd(event) {
+  function clearForm() {
+    setDate("");
+    setCategory("");
+    setKind("expense");
+    setAmount("");
+    setEditingId(null);
+  }
+
+  function startEdit(t) {
+    setDate(t.date);
+    setCategory(t.category);
+    setKind(t.kind);
+    setAmount(String(t.amount));
+    setEditingId(t.id);
+    setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
     setError("");
 
-    const response = await fetch(API_URL + "/transactions", {
-      method: "POST",
+    const url = editingId === null ? "/transactions" : "/transactions/" + editingId;
+    const method = editingId === null ? "POST" : "PUT";
+
+    const response = await fetch(API_URL + url, {
+      method: method,
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + token,
@@ -39,8 +61,7 @@ function Transactions() {
       return;
     }
 
-    setCategory("");
-    setAmount("");
+    clearForm();
     reload();
   }
 
@@ -64,6 +85,9 @@ function Transactions() {
       setError("Could not delete that transaction");
       return;
     }
+    if (id === editingId) {
+      clearForm();
+    }
     reload();
   }
 
@@ -72,8 +96,8 @@ function Transactions() {
       <h2 className="page-title">Transactions</h2>
 
       <div className="card">
-        <h2>Add transaction</h2>
-        <form className="form-row" onSubmit={handleAdd}>
+        <h2>{editingId === null ? "Add transaction" : "Edit transaction"}</h2>
+        <form className="form-row" onSubmit={handleSubmit}>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           <input
             type="text"
@@ -94,7 +118,12 @@ function Transactions() {
             onChange={(e) => setAmount(e.target.value)}
             required
           />
-          <button type="submit">Add</button>
+          <button type="submit">{editingId === null ? "Add" : "Save changes"}</button>
+          {editingId !== null && (
+            <button type="button" className="ghost" onClick={clearForm}>
+              Cancel
+            </button>
+          )}
         </form>
         {error && <p className="error">{error}</p>}
       </div>
@@ -125,7 +154,10 @@ function Transactions() {
                   <td className={"amount " + t.kind}>
                     {t.kind === "income" ? "+" : "−"}₹{formatMoney(t.amount)}
                   </td>
-                  <td style={{ textAlign: "right" }}>
+                  <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                    <button className="ghost small" onClick={() => startEdit(t)}>
+                      Edit
+                    </button>{" "}
                     <button
                       className="danger"
                       onClick={() => handleDelete(t.id, t.category + " ₹" + formatMoney(t.amount))}

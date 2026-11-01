@@ -49,3 +49,18 @@ def test_cannot_delete_another_users_transaction():
     row_id = database.list_transactions(1)[0]["id"]
     assert database.delete_transaction(2, row_id) is False
     assert len(database.list_transactions(1)) == 1
+
+def test_update_own_transaction():
+    database.add_transaction(1, "2026-10-01", "salary", "income", 80000)
+    row_id = database.list_transactions(1)[0]["id"]
+    assert database.update_transaction(1, row_id, "2026-10-02", "bonus", "income", 5000.5) is True
+    row = database.list_transactions(1)[0]
+    assert row["category"] == "bonus"
+    assert row["amount"] == 5000.5
+
+
+def test_cannot_update_another_users_transaction():
+    database.add_transaction(1, "2026-10-01", "salary", "income", 80000)
+    row_id = database.list_transactions(1)[0]["id"]
+    assert database.update_transaction(2, row_id, "2026-10-02", "hacked", "income", 1) is False
+    assert database.list_transactions(1)[0]["category"] == "salary"

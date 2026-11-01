@@ -117,3 +117,20 @@ def delete_transaction(user_id, transaction_id):
     deleted = cursor.rowcount > 0  # rowcount = how many rows were removed
     conn.close()
     return deleted
+
+def update_transaction(user_id, transaction_id, date, category, kind, amount):
+    if kind not in ("income", "expense"):
+        raise ValueError("kind must be 'income' or 'expense'")
+    if amount <= 0:
+        raise ValueError("Amount must be greater than 0")
+
+    conn = get_connection()
+    cursor = conn.execute(
+        "UPDATE transactions SET date = ?, category = ?, kind = ?, amount_paise = ? "
+        "WHERE id = ? AND user_id = ?",
+        (date, category, kind, round(amount * 100), transaction_id, user_id),
+    )
+    conn.commit()
+    updated = cursor.rowcount > 0
+    conn.close()
+    return updated

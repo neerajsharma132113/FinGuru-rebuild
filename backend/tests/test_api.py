@@ -425,3 +425,39 @@ def test_delete_unknown_id_is_404():
 def test_delete_bad_id_is_422():
     headers = make_headers()
     assert client.delete("/transactions/0", headers=headers).status_code == 422
+
+
+NEW_BODY = {"date": "2026-10-02", "category": "bonus", "kind": "income", "amount": 5000}
+
+
+def test_edit_requires_login():
+    assert client.put("/transactions/1", json=NEW_BODY).status_code == 401
+
+
+def test_edit_own_transaction_api():
+    headers = make_headers()
+    row_id = add_one(headers)
+    assert client.put("/transactions/" + str(row_id), json=NEW_BODY, headers=headers).status_code == 200
+    row = client.get("/transactions", headers=headers).json()[0]
+    assert row["category"] == "bonus"
+    assert row["amount"] == 5000
+
+
+def test_edit_other_users_transaction_is_404():
+    asha = make_headers("asha@example.com")
+    ravi = make_headers("ravi@example.com")
+    row_id = add_one(asha)
+    assert client.put("/transactions/" + str(row_id), json=NEW_BODY, headers=ravi).status_code == 404
+    assert client.get("/transactions", headers=asha).json()[0]["category"] == "salary"
+
+
+def test_edit_unknown_id_is_404():
+    headers = make_headers()
+    assert client.put("/transactions/99999", json=NEW_BODY, headers=headers).status_code == 404
+
+
+def test_edit_bad_body_is_422():
+    headers = make_headers()
+    row_id = add_one(headers)
+    bad = {"date": "2026-10-02", "category": "bonus", "kind": "gift", "amount": 5000}
+    assert client.put("/transactions/" + str(row_id), json=bad, headers=headers).status_code == 422

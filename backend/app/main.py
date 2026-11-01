@@ -23,6 +23,7 @@ from app.database import (
     get_user_by_email,
     get_user_by_id,
     delete_transaction,
+    update_transaction
 )
 from app.security import (
     hash_password,
@@ -41,7 +42,7 @@ app = FastAPI(title="FinGuru")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_methods=["GET", "POST", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
@@ -208,6 +209,23 @@ def remove_transaction(
     if not deleted:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return {"message": "Transaction deleted"}
+@app.put("/transactions/{transaction_id}")
+def edit_transaction(
+    transaction: NewTransaction,
+    transaction_id: int = Path(gt=0),
+    current_user: dict = Depends(get_current_user),
+):
+    updated = update_transaction(
+        current_user["id"],
+        transaction_id,
+        str(transaction.date),
+        transaction.category,
+        transaction.kind,
+        transaction.amount,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return {"message": "Transaction updated"}
 
 @app.get("/summary")
 def summary(current_user: dict = Depends(get_current_user)):
