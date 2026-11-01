@@ -22,7 +22,7 @@ MCP server (stdio) -----------------> the same service functions (no database ac
 ```
 
 Rules I followed: all arithmetic lives in plain, tested Python functions; the API and MCP tools only validate inputs and call them.
-
+Detailed diagrams (system overview, risk-check flow, LangGraph workflow): [docs/architecture.md](docs/architecture.md)
 ## Security
 
 - Argon2 password hashing, JWT access tokens (30 minutes), per-user data isolation (every query filters by the user id from the token)
