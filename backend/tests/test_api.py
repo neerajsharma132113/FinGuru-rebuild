@@ -1,16 +1,30 @@
 from fastapi.testclient import TestClient
+from app import database, security, fraud
 from app.main import app
 import pytest
 
 client = TestClient(app)
-from app import database, security, fraud
+
 
 
 @pytest.fixture(autouse=True)
 def use_temp_db(tmp_path, monkeypatch):
     monkeypatch.setattr(database, "DB_FILE", str(tmp_path / "test.db"))
-    monkeypatch.setattr(security, "SECRET_KEY", "test-secret-key-for-tests-only-0123456789")
+    monkeypatch.setattr(
+        security,
+        "SECRET_KEY",
+        "test-secret-key-for-tests-only-0123456789"
+    )
+
+    # Reset login rate-limit state before every test
+    security.failed_logins.clear()
+
     database.init_db()
+
+    yield
+
+    # Clean up after every test
+    security.failed_logins.clear()
 
 def test_health():
     response = client.get("/health")
@@ -54,14 +68,6 @@ def test_affordability_ok():
     )
     assert response.status_code == 200
     assert response.json()["max_emi"] == 22000
-
-
-@pytest.fixture(autouse=True)
-def use_temp_db(tmp_path, monkeypatch):
-    security.failed_logins.clear()
-    monkeypatch.setattr(database, "DB_FILE", str(tmp_path / "test.db"))
-    database.init_db()
-
 
 
 def test_register_ok_and_password_not_stored():
