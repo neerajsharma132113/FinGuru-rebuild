@@ -10,13 +10,13 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def use_temp_db(tmp_path, monkeypatch):
     monkeypatch.setattr(database, "DB_FILE", str(tmp_path / "test.db"))
-    monkeypatch.setattr(
-        security,
-        "SECRET_KEY",
-        "test-secret-key-for-tests-only-0123456789"
-    )
 
-    # Reset login rate-limit state before every test
+    test_secret = "test-secret-key-for-tests-only-0123456789"
+
+    monkeypatch.setattr(security, "SECRET_KEY", test_secret)
+    monkeypatch.setattr("app.config.SECRET_KEY", test_secret)
+
+    # Reset login rate-limit state
     security.failed_logins.clear()
 
     database.init_db()
@@ -25,7 +25,6 @@ def use_temp_db(tmp_path, monkeypatch):
 
     # Clean up after every test
     security.failed_logins.clear()
-
 def test_health():
     response = client.get("/health")
     assert response.status_code == 200
