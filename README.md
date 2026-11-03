@@ -1,5 +1,7 @@
 # FinGuru
 
+![CI](https://github.com/neerajsharma132113/FinGuru-rebuild/actions/workflows/ci.yml/badge.svg)\
+
 A personal finance app I am building step by step to learn backend, frontend, applied ML, retrieval and agent workflows.
 It uses synthetic data only. Nothing here is financial advice.
 
