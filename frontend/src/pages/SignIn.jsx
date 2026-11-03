@@ -118,6 +118,7 @@ function SignIn({ onLoggedIn }) {
             {busy ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
           </button>
         </form>
+        {busy && <p className="note">The free demo server can take up to a minute to wake up. Please wait.</p>}
         {error && <p className="error">{error}</p>}
 
         <Link to="/" className="back-link">← Back to home</Link>
