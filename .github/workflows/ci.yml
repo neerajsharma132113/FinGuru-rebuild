@@ -8,6 +8,8 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: ci-only-test-key-0123456789abcdef0123456789abcdef
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
