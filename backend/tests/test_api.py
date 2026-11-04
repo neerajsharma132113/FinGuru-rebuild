@@ -15,7 +15,8 @@ def use_temp_db(tmp_path, monkeypatch):
 
     monkeypatch.setattr(security, "SECRET_KEY", test_secret)
     monkeypatch.setattr("app.config.SECRET_KEY", test_secret)
-
+    assert security.SECRET_KEY == test_secret
+    assert security.create_access_token(1)
     # Reset login rate-limit state
     security.failed_logins.clear()
 
