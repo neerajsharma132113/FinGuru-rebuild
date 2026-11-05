@@ -5,7 +5,7 @@ import { formatMoney } from "../format";
 import { API_URL } from "../config"
 
 function Transactions() {
-  const { token, onLogout, transactions, reload } = useOutletContext();
+  const { token, onLogout, transactions, loaded, reload } = useOutletContext();
   const [date, setDate] = useState("");
   const [category, setCategory] = useState("");
   const [kind, setKind] = useState("expense");
@@ -131,7 +131,15 @@ function Transactions() {
       <div className="card">
         <h2>Your transactions</h2>
         {transactions.length === 0 ? (
-          <p className="empty">No transactions yet. Add your first one above.</p>
+                    <p className="empty">
+            {loaded ? (
+              "No transactions yet. Add your first one above."
+            ) : (
+              <>
+                <span className="spinner"></span>Loading your transactions...
+              </>
+            )}
+          </p>
         ) : (
           <table>
             <thead>

@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-
 import { API_URL } from "./config";
 
 function Dashboard({ token, userEmail, onLogout }) {
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [slow, setSlow] = useState(false);
 
   async function loadTransactions() {
     const response = await fetch(API_URL + "/transactions", {
@@ -15,9 +17,10 @@ function Dashboard({ token, userEmail, onLogout }) {
       onLogout();
       return;
     }
-    if (response.ok) {
-      setTransactions(await response.json());
+    if (!response.ok) {
+      throw new Error("transactions failed");
     }
+    setTransactions(await response.json());
   }
 
   async function loadSummary() {
@@ -28,18 +31,30 @@ function Dashboard({ token, userEmail, onLogout }) {
       onLogout();
       return;
     }
-    if (response.ok) {
-      setSummary(await response.json());
+    if (!response.ok) {
+      throw new Error("summary failed");
     }
+    setSummary(await response.json());
   }
 
-  function reload() {
-    loadTransactions();
-    loadSummary();
+  async function reload() {
+    setLoadError("");
+    try {
+      await Promise.all([loadTransactions(), loadSummary()]);
+    } catch (err) {
+      setLoadError("Could not load your data. The free demo server may still be waking up.");
+    }
+    setLoaded(true);
   }
 
   useEffect(() => {
     reload();
+  }, []);
+
+  // After 4 seconds without data, show the "waking up" hint
+  useEffect(() => {
+    const timer = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(timer);
   }, []);
 
   const latest = summary.length > 0 ? summary[summary.length - 1] : null;
@@ -65,7 +80,19 @@ function Dashboard({ token, userEmail, onLogout }) {
       </aside>
 
       <main className="content">
-        <Outlet context={{ token, onLogout, transactions, summary, latest, reload }} />
+        <Outlet
+          context={{
+            token,
+            onLogout,
+            transactions,
+            summary,
+            latest,
+            loaded,
+            loadError,
+            slow,
+            reload,
+          }}
+        />
       </main>
     </div>
   );

@@ -32,7 +32,43 @@ function shortMoney(value) {
 }
 
 function Overview() {
-  const { summary, latest, transactions } = useOutletContext();
+  const { summary, latest, transactions, loaded, loadError, slow, reload } = useOutletContext();
+
+  if (!loaded) {
+    return (
+      <div>
+        <div className="page-head">
+          <h2 className="page-title">Overview</h2>
+        </div>
+        <div className="card">
+          <p className="empty">
+            <span className="spinner"></span>Loading your data...
+          </p>
+          {slow && (
+            <p className="note" style={{ textAlign: "center" }}>
+              The free demo server may be waking up. This can take up to a minute.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div>
+        <div className="page-head">
+          <h2 className="page-title">Overview</h2>
+        </div>
+        <div className="card">
+          <p className="error">{loadError}</p>
+          <p style={{ margin: "12px 0 0 0" }}>
+            <button onClick={reload}>Try again</button>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!latest) {
     return (
